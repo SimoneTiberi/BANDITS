@@ -1,0 +1,13 @@
+*.o
+*.so
+*.bbl
+*.log
+*.toc
+*._*
+*.DS_Store
+.Rproj.user
+*.Rhistory
+*.Rproj
+vignettes/*
+!vignettes/BANDITS.Rnw
+!vignettes/References.bib

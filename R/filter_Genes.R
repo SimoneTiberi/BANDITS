@@ -1,0 +1,91 @@
+#' Filter lowly abundant genes.
+#'
+#' \code{filter_genes} filters genes, according to the overall number of counts (across all samples) compatible with the gene.
+#' The filtering also applies to groups of genes with reads/fragments compatible with >1 gene;
+#' in this case, the number of counts considered is across all genes in the group.
+#' 
+#' The function inputs a 'BANDITS_data' object, and returns agaain a 'BANDITS_data' object after filtering genes and groups of genes.
+#'
+#' @param data a 'BANDITS_data' object, created with the \code{\link{create_data}} function.
+#' @param min_counts_per_Gene the minimum number of counts compatible with a gene (across all samples).
+#' 
+#' @return A \code{\linkS4class{BANDITS_data}} object.
+#' @examples
+#' ## Preliminary information
+#' 
+#' # specify the directory of the internal data:
+#' data_dir = system.file("extdata", package = "BANDITS")
+#' data_dir
+#' 
+#' # load gene_to_transcript matching:
+#' data("GeneTr_id", package = "BANDITS")
+#' # GeneTr_id contains transcripts ids on the first column and the corresponding gene ids on the second column:
+#' head(GeneTr_id)
+#' 
+#' # Specify the directory of the transcript level estimated counts.
+#' sample_names = paste0("sample", seq_len(4))
+#' quant_files = file.path(data_dir, sample_names, "quant.sf")
+#' file.exists(quant_files)
+#' 
+#' # Load the transcript level estimated counts via tximport:
+#' library(tximport)
+#' txi = tximport(files = quant_files, type = "salmon", txOut = TRUE)
+#' counts = txi$counts
+#' head(counts)
+#' 
+#' 
+#' 
+#' ## Optional (recommended): transcript pre-filtering
+#' 
+#' transcripts_to_keep = filter_transcripts(gene_to_transcript = GeneTr_id,
+#'                                          transcript_counts = counts, min_transcript_proportion = 0.01,
+#'                                          min_transcript_counts = 10, min_gene_counts = 20)
+#' head(transcripts_to_keep)
+#' 
+#' 
+#' 
+#' ## Load the data:
+#' 
+#' # compute the Median estimated effective length for each transcript:
+#' eff_len = eff_len_compute(x_eff_len = txi$length)
+#' 
+#' # specify the path to the equivalence classes:
+#' equiv_classes_files = file.path(data_dir, sample_names, "aux_info", "eq_classes.txt")
+#' file.exists(equiv_classes_files)
+#' 
+#' # create data and filter internally lowly abundant transcripts:
+#' BANDITS_data = create_data(gene_to_transcript = GeneTr_id,
+#'                            path_to_eq_classes = equiv_classes_files, eff_len = eff_len, 
+#'                            n_cores = 2,
+#'                            transcripts_to_keep = transcripts_to_keep)
+#' 
+#' # Filter lowly abundant genes:
+#' BANDITS_data = filter_genes(BANDITS_data, min_counts_per_Gene = 20)
+#' 
+#' @author Simone Tiberi
+#'  
+#' @seealso \code{\link{filter_transcripts}}, \code{\link{create_data}}, \code{\linkS4class{BANDITS_data}}
+#' 
+#' @export
+filter_genes  = function(data, min_counts_per_Gene = 10){
+  # I filter out lowly expressed genes: at least 1 count per sample and at least 11 counts per condition:
+  tot_counts = sapply( data@counts, sum)
+  SEL = tot_counts >= min_counts_per_Gene
+  
+  n_initial = length(data@all_genes) # only genes with > 1 transcript can be analyzed for DTU
+
+  # filter genes/groups from data:
+  if(mean(SEL) < 1){ # if mean(SEL) == 1, no genes/groups were filtered.
+    data@genes       = data@genes[SEL]
+    data@transcripts = data@transcripts[SEL]
+    data@effLen      = data@effLen[SEL]
+    data@classes     = data@classes[SEL]
+    data@counts      = data@counts[SEL]
+    data@uniqueId    = data@uniqueId[SEL]
+  }
+  data@all_genes = data@all_genes[ data@all_genes %in% unlist(data@genes) ]
+  
+  message(paste0("Initial number of genes: ", n_initial, "; number of selected genes: ", length(data@all_genes) ) )
+  
+  return(data)
+}

@@ -1,0 +1,371 @@
+%\VignetteIndexEntry{BANDITS: Bayesian ANalysis of DIfferenTial Splicing}
+%\VignettePackage{BANDITS}
+%\VignetteEngine{knitr::knitr}
+
+% to change syntax from Swave to knitr use:
+% knitr::
+
+\documentclass[10pt]{article}
+
+<<style, eval=TRUE, echo=FALSE, results='asis'>>=
+BiocStyle::latex()
+@
+
+\usepackage[utf8]{inputenc}
+\usepackage[sort]{cite}
+\usepackage{xstring}
+
+\bioctitle[BANDITS: Bayesian ANalysis of DIfferenTial Splicing]{BANDITS: Bayesian ANalysis of DIfferenTial Splicing}
+
+\author{
+Simone Tiberi\thanks{\email{simone.tiberi@uzh.ch}},
+Mark D. Robinson\\
+Institute for Molecular Life Sciences, University of Zurich, Switzerland\\
+Swiss Institute of Bioinformatics, University of Zurich, Switzerland
+}
+
+\begin{document}
+
+<<include=FALSE>>=
+library(knitr)
+opts_chunk$set(
+concordance=TRUE
+)
+@
+
+\maketitle
+
+\packageVersion{\Sexpr{BiocStyle::pkg_ver("BANDITS")}}
+
+\newpage
+\tableofcontents
+\newpage
+
+<<setup_knitr, include=FALSE, cache=FALSE>>=
+library(knitr)
+opts_chunk$set(cache = FALSE, warning = FALSE, out.width = "7cm", fig.width = 7, out.height = "7cm", fig.height = 7)
+@
+
+%------------------------------------------------------------------------------
+% Introduction
+%------------------------------------------------------------------------------
+\section{Overview}
+% For the full details about the methodology, see the full paper ...
+\Rpackage{BANDITS} is a Bayesian hierarchical method to perform differential splicing via differential transcript usage (DTU).
+
+\Rpackage{BANDITS} uses a hierarchical structure, via a Dirichlet-Multinomial model, to explicitly model the over-dispersion between replicates and allowing for sample-specific transcript relative abundance (i.e., the proportions).
+We input the equivalence classes and respective counts, where the equivalence classes represent the group of transcripts reads are compatible with.
+
+The method is embedded in a Bayesian hierarchical framework, where the posterior densities of the parameters are inferred via Markov chain Monte Carlo (MCMC) techniques.
+The allocation of each RNA-seq read to its transcript of origin is treated as a latent variable and also sampled in the MCMC.
+To test for DTU, we compare the average transcript relative abundance between two or more conditions.
+%: the posterior densities are approximated by a multivariate normal distribution allowing us to implement a multivariate Wald test.
+A statistical test is performed, both, at the gene and transcript level, allowing scientists to investigate what specific transcripts are differentially used in significant genes.
+
+In the following, we present a full pipeline for using \Rpackage{BANDITS} on an example dataset.
+
+Use \Rcode{browseVignettes('BANDITS')} to access the R code used in the vignettes.
+
+\section{Aligning reads}
+The package inputs the equivalence classes and respective counts.
+These can be obtained by aligning reads either directly to a reference transcriptome with pseudo-alignmers, such as \software{salmon} \cite{salmon} or \software{kallisto} \cite{kallisto}, or to a reference genome with full-aligners, such as \software{STAR} \cite{STAR} or \software{TopHat2} \cite{TopHat2}, and checking the transcripts compatible with each genome alignment.
+
+Importantly, when using \software{salmon}, use the option \Rcode{--dumpEq} to obtain the equivalence classes, and when using \software{STAR}, use the option \Rcode{--quantMode TranscriptomeSAM} to obtain alignments translated into transcript coordinates.
+
+The file ``README.md'' provides two pipelines to align reads.
+
+\section{Gene-transcript matching}
+Further to the equivalence classes, our tool requires the matching between transcript and gene ids, compatible with the genome or transcriptome used to align reads.
+There are multiple ways to compute a gene-transcript compatibility matrix; below we show two ways to create it, accoriding to whether reads are aligned with a genome and transcriptome aligner.
+Alternative ways to compute gene-transcript matchings are illustrated in \Rpackage{tximport} \cite{tximport} vignette.
+
+If the reads are aligned to the genome first, we compute a gene-transcript association from the gtf file via \Rcode{GenomicFeatures} library.
+Here we provide an example code:
+<<eval=FALSE>>=
+suppressMessages(library(GenomicFeatures))
+gtf_file <- system.file("extdata","GTF_files","Aedes_aegypti.partial.gtf",
+              package="GenomicFeatures")
+tx = makeTxDbFromGFF(gtf_file)
+tx = as.list(tx)
+gene_id = tx$genes$gene_id
+tr_id   = tx$transcripts$tx_name[ tx$genes$tx_id ]
+GeneTr_id_gtf = data.frame( gene_id = gene_id, transcript_id = tr_id )
+# remove eventual duplicated rows:
+GeneTr_id_gtf = unique(GeneTr_id_gtf)
+head(GeneTr_id_gtf)
+@
+
+If the reads are aligned directly to the transcriptome, we compute a gene-transcript association from the cDNA fasta file via \Rcode{Biostrings} library.
+Here we provide an example code:
+<<eval=FALSE>>=
+suppressMessages(library(Biostrings))
+data_dir = system.file("extdata", package = "BANDITS")
+fasta = readDNAStringSet(file.path(data_dir, 
+          "Homo_sapiens.GRCh38.cdna.all.1.1.10M.fa.gz"))
+
+fasta_names = names(fasta)
+fasta_names_split = strsplit(fasta_names, " ")
+fasta_names_split[[1]]
+
+# get the transcript id in the 1-st slot of 'fasta_names_split':
+tr_name = sapply(fasta_names_split, function(x) x[[1]])
+head(tr_name)
+
+# get the transcript id in the 4-th slot of 'fasta_names_split':
+gene_name = sapply(fasta_names_split, function(x) x[[4]])
+head(gene_name)
+
+# remove the first 4 characters 'gene:' from the gene name:
+gene_name = substring(gene_name, first = 6)
+head(gene_name)
+
+GeneTr_id_fasta = data.frame( gene_id = as.character(gene_name),
+                    transcript_id = as.character(tr_name))
+# remove NA's:
+GeneTr_id_fasta = GeneTr_id_fasta[ rowSums( is.na(GeneTr_id_fasta)) == 0, ]
+# remove eventual duplicated rows:
+GeneTr_id_fasta = unique(GeneTr_id_fasta)
+head(GeneTr_id_fasta)
+@
+
+\section{Installation}
+To install the package from R, run:
+<<eval=FALSE>>=
+if (!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+BiocManager::install("BANDITS")
+@
+
+\section{DTU pipeline}
+
+Load the \Rpackage{BANDITS} package.
+<<>>=
+library(BANDITS)
+@
+
+\subsection{Preliminary information}
+Specify the directory of the data (internal in the package).
+<<>>=
+data_dir = system.file("extdata", package = "BANDITS")
+@
+
+We need a matrix or data.frame containing the matching between the transcript and the gene identifiers.
+The file ``alignment and gene-transcript matching.txt'' shows how to create such a file from a gtf (in case of genome alignment) or from a fasta file (in case of transcript alignment).
+
+Load the precomputed gene-transcript matching.
+\Rcode{GeneTr\_id} is a data.frame (but a matrix is also accepted) containing the transcripts ids on the first column and the corresponding gene ids on the second column.
+<<>>=
+data("GeneTr_id", package = "BANDITS")
+head(GeneTr_id)
+@
+
+Specify the directory of the transcript level estimated counts.
+<<>>=
+sample_names = paste0("sample", seq_len(4))
+quant_files = file.path(data_dir, sample_names, "quant.sf")
+file.exists(quant_files)
+@
+
+Load the transcript level estimated counts via tximport; in our case counts were aligned with \software{salmon}, but other tools are also accepted (e.g., \software{kallisto}).
+<<>>=
+library(tximport)
+txi = tximport(files = quant_files, type = "salmon", txOut = TRUE)
+counts = txi$counts
+head(counts)
+@
+
+We define the design of the study: in our case we have 2 groups, that we call ``A'' and ``B'' of 2 samples each.
+<<>>=
+samples_design = data.frame(sample_id = sample_names,
+                   group = c("A", "A", "B", "B"))
+samples_design
+@
+
+The groups are defined in:
+<<>>=
+levels(samples_design$group)
+@
+
+\subsection{Optional (recommended): transcript pre-filtering}
+Pre-filtering lowly abundant transcripts was found to improve performance of differential splicing methods;
+% REF: charlotte and our work!
+furthermore, by simplifying the inferential problem, it also leads to a significant reduction in the computational cost of our method.
+Albeit not strictly required, we highly suggest to pre-filter transcripts.
+Here, we use a mild filtering cutoff by remove transcripts whose average relative abundance is below 0.01.
+For the filtering step, we use transcript-level estimated counts to compute the average relative abundance.
+
+Compute the transcripts to keep, by filtering lowly abundant transcripts.
+Here \Rcode{min\_transcript\_proportion = 0.01} will remove transctipts with estimated mean relative abundance below 0.01.
+We further impose constraints on the total abundance: \Rcode{min\_transcript\_counts = 10} indicates that each transcript must have at least 10 estimated counts (adding counts from all samples), and \Rcode{min\_gene\_counts = 20} specifies that each gene should have at least 20 estimated counts (adding counts from all samples).
+While running, \Rcode{filter\_transcripts} prints on screen the percentage of transcripts and genes kept after filtering: in this case about 81\% of the transcripts and 73\% of the genes are filtered.
+<<>>=
+transcripts_to_keep = filter_transcripts(gene_to_transcript = GeneTr_id,
+                        transcript_counts = counts, 
+                        min_transcript_proportion = 0.01,
+                        min_transcript_counts = 10, 
+                        min_gene_counts = 20)
+head(transcripts_to_keep)
+@
+
+\subsection{Load the data}
+Before loading the data, we compute, via \Rcode{eff\_len\_compute}, the median effective lenght of each transcript (the median is computed with respect to the samples).
+<<>>=
+eff_len = eff_len_compute(x_eff_len = txi$length)
+@
+
+We then specify the path to the equivalence classes in \Rcode{equiv\_classes\_files}.
+<<>>=
+equiv_classes_files = file.path(data_dir, sample_names, 
+                        "aux_info", "eq_classes.txt")
+file.exists(equiv_classes_files)
+@
+
+Warning: the sample names in \Rcode{equiv\_classes\_files} must have the same order as those in the design object, containted in \Rcode{samples\_design}.
+<<>>=
+equiv_classes_files
+samples_design$sample_id
+@
+
+We then import the equivalence classes and respective counts, and create a \Rcode{BANDITS\_data} object via \Rcode{create\_data}.
+% The function inputs the matching between transcrits and genes (\Rcode{GeneToTranscript = GeneTr\_id}), the path to the equivalence classes
+When providing \Rcode{transcripts\_to\_keep}, the function filters internally transcripts that are not in the vector.
+% If an equivalence class contains a transcript 
+When filtering transripts, we suggest to parallelize computations and use one core per sample (i.e., \Rcode{n\_cores = length(path\_to\_eq\_classes)}).
+Since at least 2 transcripts are necessary to study differential splicing, genes with a single transcript are not analyzed.
+% When RNA-seq reads are compatible with transcripts from distinct genes, 
+<<>>=
+BANDITS_data = create_data(gene_to_transcript = GeneTr_id,
+                 path_to_eq_classes = equiv_classes_files, eff_len = eff_len, 
+                 n_cores = 2,
+                 transcripts_to_keep = transcripts_to_keep)
+@
+
+If transcripts pre-filtering is not wanted, do not specify \Rcode{transcripts\_to\_keep} parameter.
+
+After loading the data, with \Rcode{filter\_genes(data, min\_counts\_per\_Gene = 20)}, we remove genes with less than 20 counts overall (i.e.,  considering all equivalence classes across all samples).
+<<>>=
+BANDITS_data = filter_genes(BANDITS_data, min_counts_per_Gene = 20)
+@
+
+
+\subsection{Optional (recommended): infer an informative prior for the precision parameter}
+In this Section we illustrate how to formulate an informative prior for the precision parameter 
+(i.e., the Dirichlet-Multinomial parameter modelling the degree of over-dispersion between samples).
+Note that this is an optional, yet highly recommended, step.
+
+The \Rcode{prior\_precision} function builds on top of \Rpackage{DRIMSeq}'s \cite{DRIMSeq} \Rcode{dmPrecision} function which provides genewise estimates of the precision parameter.
+Use the same filtering criteria as in \Rcode{filter\_transcripts}; if transcript pre-filtering is not performed, set \Rcode{min\_transcript\_proportion}, \Rcode{min\_transcript\_counts} and \Rcode{min\_gene\_counts} to 0.
+<<>>=
+set.seed(61217)
+prec = prior_precision(gene_to_transcript = GeneTr_id,
+         transcript_counts = counts,
+         min_transcript_proportion = 0.01, min_transcript_counts = 10,
+         min_gene_counts = 20, n_cores = 2)
+@
+
+The first element of the result contains the mean and standard deviation of the log-precision estimates.
+<<>>=
+prec[[1]]
+@
+
+Plot the histogram of the genewise log-precision estimates.
+The black solid line represents the normally distributed prior distribution for the log-precision parameter.
+<<>>=
+plot_precision(prec)
+@
+
+\subsection{Test for DTU}
+With \Rcode{test\_DTU}, we jointly run the MCMC algorithm, to infer the posterior distributions of the parameters, and test for DTU.
+\Rcode{mean\_log\_delta} and \Rcode{sd\_log\_delta} represent the mean and standard deviation of the informative prior for the log-precision parameter, if available.
+If an informative prior was not computed, leave \Rcode{mean\_log\_delta} and \Rcode{sd\_log\_delta} fields unspecified.
+
+\Rcode{R} and \Rcode{burn\_in} represent the length of the MCMC chain (excluding the burn-in) and the length of the burn-in (i.e., the initial portion of the chain which is discarded).
+For genes that are analyzed together (because one or more reads are compatible with multiple genes), \Rcode{R} and \Rcode{burn\_in} are doubled to face the increased complexity of the inferential problem.
+The method requires at least \Rcode{R = 10\^4} and \Rcode{burn\_in = 2*10\^3}.
+Albeit no difference was observed in simulation studies when increasing these numbers, we encourage users to possibly use higher values (e.g., double) if the computational time allows it.
+
+A convergence diagnostic is used to test if the posterior chains are stationary and to determine if a further fraction of the chain should be discarded as burn-in.
+If convergence is not reached, the chain is discarded and a second chain is run; if convergence is again not reached, a third chain is run: if three consecutive chains fail to converge, the respective gene is not tested for DTU.
+
+It is highly suggested to speed up computations by parallelizing the method and specifying the number of parallel threads via the \Rcode{n\_cores} parameter.
+% It is also possible to set the seed 
+Before running the MCMC, we set the seed for the random number generation in R.
+
+For genes with a p.value below 0.1, \Rcode{test\_DTU} runs a second independent MCMC chain, merges it with the first one and tests again for DTU based on the aggregated chain.
+
+The method can technicall be run with a single observation per group, however 2 in each group should be regarded as the very minimum sample size.
+
+We run the DTU method.
+<<>>=
+set.seed(61217)
+x = test_DTU(BANDITS_data = BANDITS_data,
+      prior_precision = prec$prior,
+      samples_design = samples_design,
+      R = 10^4, burn_in = 2*10^3, n_cores = 2,
+      gene_to_transcript = GeneTr_id)
+@
+
+The output of \Rcode{test\_DTU} is a \Rcode{BANDITS\_test} object; results are stored in 3 \Rcode{data.frame} objects containing gene level results, transcript level results and convergence output.
+All results are sorted, by default, according to the significance of the gene level test.
+
+To read a full description of the output from \Rcode{test\_DTU}, see \Rcode{help(BANDITS\_test)}.
+<<>>=
+x
+@
+
+Functions \Rcode{results\_gene}, \Rcode{results\_transcript} and \Rcode{converged} can be used to access gene level results, transcript level results and convergence output, respectively.
+
+Visualize the most significant Genes, sorted by gene level significance.
+<<>>=
+head(top_genes(x))
+@
+
+Alternatively, gene-level results can also be sorted according to ``DTU\_measure'', which is a measure of the strength of the change between average relative abundances of the two groups.
+<<>>=
+head(top_genes(x, sort_by = "DTU_measure"))
+@
+
+Visualize the most significant transcripts, sorted by transcript level significance.
+<<>>=
+head(top_transcripts(x, sort_by = "transcript"))
+@
+
+Visualize the convergence output for the most significant genes, sorted by gene level significance.
+<<>>=
+head(convergence(x))
+@
+
+We can further use the \Rcode{gene} function to gather all output for a specific gene: gene level, transcript level and convergence results.
+<<>>=
+top_gene = top_genes(x, n = 1)
+gene(x, top_gene$Gene_id)
+@
+
+Similarly we can use the \Rcode{transcript} function to gather all output for a specific transcript.
+<<>>=
+top_transcript = top_transcripts(x, n = 1)
+transcript(x, top_transcript$Transcript_id)
+@
+
+Finally, we can plot the estimated average transcript relative expression in the two groups for a specific gene via \Rcode{plot\_proportions}.
+<<>>= 
+plot_proportions(x, top_gene$Gene_id)
+@
+
+%--------------------------------------------------
+% Session information
+%--------------------------------------------------
+
+\section{Session information}
+
+<<>>=
+sessionInfo()
+@
+
+%--------------------------------------------------
+% References
+%--------------------------------------------------
+
+\bibliography{References}
+
+\end{document}
