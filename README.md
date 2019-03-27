@@ -1,5 +1,5 @@
 # BANDITS: Bayesian ANalysis of DIfferenTial Splicing
-`BANDIT` is a Bayesian hierarchical model for detecting differential splicing of genes and transcripts,
+`BANDITS` is a Bayesian hierarchical model for detecting differential splicing of genes and transcripts,
 via differential transcript usage (DTU), 
 between two or more conditions.
 The method uses a Bayesian hierarchical framework, which allows for sample specific proportions
@@ -8,34 +8,34 @@ Parameters are inferred via Markov chain Monte Carlo (MCMC) techniques and a DTU
 via a multivariate Wald test on the posterior densities for the average relative abundance of transcripts.
 
 ## Bioconductor installation 
-`BANDIT` is available on [Bioconductor](https://www.bioconductor.org/packages/release/bioc/html/BANDIT.html) and can be installed with the command:
+`BANDITS` is available on [Bioconductor](https://www.bioconductor.org/packages/release/bioc/html/BANDITS.html) and can be installed with the command:
 ``` r
 if (!requireNamespace("BiocManager", quietly=TRUE))
     install.packages("BiocManager")
-BiocManager::install("BANDIT")
+BiocManager::install("BANDITS")
 ```
 
 ## Devel installation from Github
 To install the latest development version of the package from github, use `devtools` (available [here](https://github.com/hadley/devtools)):
 ``` r
-devtools::install_github("SimoneTiberi/BANDIT")
+devtools::install_github("SimoneTiberi/BANDITS")
 ```
 
 To install the package jointly with its vignette use \code{build_vignettes = TRUE}:
 ``` r
-devtools::install_github("SimoneTiberi/BANDIT", build_vignettes = TRUE)
+devtools::install_github("SimoneTiberi/BANDITS", build_vignettes = TRUE)
 ```
 
 ## Vignette
 The vignette illustrating how to use the package can be accessed on the 
-[Bioconductor website](https://www.bioconductor.org/packages/release/bioc/vignettes/BANDIT/inst/doc/BANDIT.pdf)
+[Bioconductor website](https://www.bioconductor.org/packages/release/bioc/vignettes/BANDITS/inst/doc/BANDITS.pdf)
 or from R via:
 ``` r
-vignette("BANDIT")
+vignette("BANDITS")
 ```
 or
 ``` r
-browseVignettes("BANDIT")
+browseVignettes("BANDITS")
 ```
 
 ## Alignment
