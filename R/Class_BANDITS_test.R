@@ -12,9 +12,7 @@
 #' 
 #' @return
 #' \itemize{
-#' \item \code{show(x)}: returns the \code{head} of the gene and transcript level results and of the convergence diagnostic.
-#' \item \code{head(x)}: returns the \code{head} of the gene and transcript level results and of the convergence diagnostic.
-#' \item \code{tail(x)}: returns the \code{tail} of the gene and transcript level results and of the convergence diagnostic.
+#' \item \code{show(object)}: returns the \code{head} of the gene and transcript level results and of the convergence diagnostic.
 #' \item \code{top_genes(x, n = Inf,  sort_by = "p.value")}: returns the gene-level results of the DTU test for the top 'n' significant genes.
 #' By default n = Inf and all results will be reported.
 #' sort_by = "gene" for sorting results according to gene-level significance; sort_by = "DTU_measure" for sorting results according to the 'DTU_measure'.
@@ -261,11 +259,11 @@ setMethod("convergence", "BANDITS_test", function(x){
 
 #' @rdname BANDITS_test-class
 #' @export
-setMethod("show", "BANDITS_test", function(x){
-  message(paste0("A 'BANDITS_test' object, with ", nrow(x@Gene_results), " genes and ", nrow(x@Transcript_results), " transcript level results."))
+setMethod("show", "BANDITS_test", function(object){
+  message(paste0("A 'BANDITS_test' object, with ", nrow(object@Gene_results), " genes and ", nrow(object@Transcript_results), " transcript level results."))
 })
 
-setGeneric("gene", function(x, ...) 
+setGeneric("gene", function(x, ...)
   standardGeneric("gene") )
 
 #' @rdname BANDITS_test-class

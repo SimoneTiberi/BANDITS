@@ -18,7 +18,7 @@ using namespace Rcpp;
 // UMG represents Unique Multi-group
 void centerNumericMatrix_bis_UMG(Rcpp::NumericMatrix& X) {
   const int m = X.ncol();
-  for (int j = 0; j < m; ++j) {
+  for (unsigned int j = 0; j < m; ++j) {
     X(Rcpp::_, j) = X(Rcpp::_, j) - Rcpp::mean(X(Rcpp::_, j));
   }
 }
@@ -37,8 +37,8 @@ void covRcpp_bis_UMG(Rcpp::NumericMatrix& Y,
   // COV only updates the bottom right corner element!
   
   // Computing the covariance matrix
-  for (int i = 0; i < K; ++i) {
-    for (int j = 0; j <= i; ++j) { // I REMOVE THE FIRST 100 ROWS OF THE MCMC AND START FROM THE 101-st row.
+  for (unsigned int i = 0; i < K; ++i) {
+    for (unsigned int j = 0; j <= i; ++j) { // I REMOVE THE FIRST 100 ROWS OF THE MCMC AND START FROM THE 101-st row.
       cov(i,j) = c_prop * Rcpp::sum(Y(Rcpp::_, i)*Y(Rcpp::_, j))/df;
       cov(j,i) = cov(i,j);
     }
@@ -208,7 +208,7 @@ Rcpp::List
     for (unsigned int r = 0; r < R; ++r) {
       
       for (unsigned int n = 0; n < N_groups; ++n) { // n representing the group id
-        for (unsigned int i = 0; i < N[n]; ++i) { // loop on all N[n] samples of group n
+        for (int i = 0; i < N[n]; ++i) { // loop on all N[n] samples of group n
           // compute `pi_new_i` element-wise
           for (unsigned int k = 0; k < K; ++k) {
             pi_new_i[k] = pi_new[n](i,k) / l[k];
@@ -245,7 +245,7 @@ Rcpp::List
               rmultinom(f[n](j, i), prob.begin(), K, n_multinom.begin());
               //          gsl_ran_multinomial(r, K, f(j, i), prob.begin(), (unsigned int *) n.begin());
               
-              for (int k = 0; k < K; ++k) {
+              for (unsigned int k = 0; k < K; ++k) {
                 //  prob.push_back(pi_new_i[k] * exon_id_col_j[k]);
                 Y_new(n,k) += n_multinom[k];
               }

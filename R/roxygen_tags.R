@@ -18,6 +18,7 @@
 #' @importFrom BiocParallel MulticoreParam
 #' @importFrom methods is
 #' @importFrom methods new
+#' @importFrom methods show
 #' @importFrom ggplot2 aes_string
 #' @importFrom ggplot2 geom_bar
 #' @importFrom ggplot2 ggplot

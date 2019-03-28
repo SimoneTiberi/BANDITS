@@ -39,9 +39,7 @@
 }
 \value{
 \itemize{
-\item \code{show(x)}: returns the \code{head} of the gene and transcript level results and of the convergence diagnostic.
-\item \code{head(x)}: returns the \code{head} of the gene and transcript level results and of the convergence diagnostic.
-\item \code{tail(x)}: returns the \code{tail} of the gene and transcript level results and of the convergence diagnostic.
+\item \code{show(object)}: returns the \code{head} of the gene and transcript level results and of the convergence diagnostic.
 \item \code{top_genes(x, n = Inf,  sort_by = "p.value")}: returns the gene-level results of the DTU test for the top 'n' significant genes.
 By default n = Inf and all results will be reported.
 sort_by = "gene" for sorting results according to gene-level significance; sort_by = "DTU_measure" for sorting results according to the 'DTU_measure'.

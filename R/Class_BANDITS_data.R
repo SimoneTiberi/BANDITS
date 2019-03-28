@@ -9,7 +9,7 @@
 #' 
 #' @return
 #' \itemize{
-#' \item \code{show(x)}: returns the number of genes and transcripts in the \code{BANDITS_data} object.
+#' \item \code{show(object)}: returns the number of genes and transcripts in the \code{BANDITS_data} object.
 #' }
 #' 
 #' @slot genes \code{list} of gene names: each element is a vector of 1 or 
@@ -91,8 +91,8 @@ setClass("BANDITS_data",
 
 #' @rdname BANDITS_data-class
 #' @export
-setMethod("show", "BANDITS_data", function(x){
-  message(paste0("A 'BANDITS_data' object of length ", length(x@uniqueId), "."))
-  message(paste0("Number of samples: ", ncol(x@counts[[1]]), "."))
-  message(paste0("Number of genes: ", length(x@all_genes), "."))
+setMethod("show", "BANDITS_data", function(object){
+  message(paste0("A 'BANDITS_data' object of length ", length(object@uniqueId), "."))
+  message(paste0("Number of samples: ", ncol(object@counts[[1]]), "."))
+  message(paste0("Number of genes: ", length(object@all_genes), "."))
 })

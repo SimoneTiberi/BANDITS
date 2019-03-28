@@ -18,7 +18,7 @@ using namespace Rcpp;
 // TMG represents Together Multi-group
 void centerNumericMatrix_bisTMG(Rcpp::NumericMatrix& X) {
   const int m = X.ncol();
-  for (int j = 0; j < m; ++j) {
+  for (unsigned int j = 0; j < m; ++j) {
     X(Rcpp::_, j) = X(Rcpp::_, j) - Rcpp::mean(X(Rcpp::_, j));
   }
 }
@@ -37,8 +37,8 @@ void covRcpp_bisTMG(Rcpp::NumericMatrix& Y,
   // COV only updates the bottom right corner element!
   
   // Computing the covariance matrix
-  for (int i = 0; i < K; ++i) {
-    for (int j = 0; j <= i; ++j) { // I REMOVE THE FIRST 100 ROWS OF THE MCMC AND START FROM THE 101-st row.
+  for (unsigned int i = 0; i < K; ++i) {
+    for (unsigned int j = 0; j <= i; ++j) { // I REMOVE THE FIRST 100 ROWS OF THE MCMC AND START FROM THE 101-st row.
       cov(i,j) = c_prop * Rcpp::sum(Y(Rcpp::_, i)*Y(Rcpp::_, j))/df;
       cov(j,i) = cov(i,j);
     }
@@ -229,10 +229,10 @@ Rcpp::List
     for (unsigned int r = 0; r < R; ++r) {
       
       for (unsigned int n = 0; n < N_groups; ++n) { // n representing the group id
-        for (unsigned int i = 0; i < N[n]; ++i) { // loop on all N[n] samples of group n
+        for (int i = 0; i < N[n]; ++i) { // loop on all N[n] samples of group n
           k_ = 0;
           for (unsigned int g = 0; g < n_genes; ++g) { // loop on n_genes genes
-            for (unsigned int k = 0; k < K[g]; ++k) {
+            for (int k = 0; k < K[g]; ++k) {
               pi_new_i[k_] = TOT_Y_new[n](i,g) * pi_new[n][g](i,k) / l[k_];
               k_ += 1;
             }
@@ -259,13 +259,13 @@ Rcpp::List
                 rmultinom(f[n](j, i), prob.begin(), K_tot, n_multinom.begin());
                 //          gsl_ran_multinomial(r, K, f(j, i), prob.begin(), (unsigned int *) n.begin());
                 
-                for (int k = 0; k < K_tot; ++k) {
+                for (unsigned int k = 0; k < K_tot; ++k) {
                   //  prob.push_back(pi_new_i[k] * exon_id_col_j[k]);
                   X_new(j,k) = n_multinom[k];
                 }
               }
               else { // if prob == 0, then set the X counts to 0
-                for (int k = 0; k < K_tot; ++k) {
+                for (unsigned int k = 0; k < K_tot; ++k) {
                   X_new(j,k) = 0; // maybe not needed ? already 0 ? double-check!
                 }
               }
@@ -281,7 +281,7 @@ Rcpp::List
             
             TOT_Y_new[n](i,g) = 0;
             
-            for (unsigned int k = 0; k < K[g]; ++k) { // g is needed to loop over the correct k
+            for (int k = 0; k < K[g]; ++k) { // g is needed to loop over the correct k
               for (unsigned int j = 0; j < J; ++j) { // sum all values over the corresponding equivalence classes.
                 Y_new(k) += X_new(j,k_);
               }
@@ -293,7 +293,7 @@ Rcpp::List
             
             if(One_transcript[g] == false){ // if >1 transcript in the gene.
               alpha = Rcpp::NumericVector(K[g]);
-              for (unsigned int k = 0; k < K[g]; ++k) { // g is needed to loop over the correct k
+              for (int k = 0; k < K[g]; ++k) { // g is needed to loop over the correct k
                 alpha[k] = exp(alpha_new[n][g][k]) + Y_new(k);
               }
               
@@ -303,14 +303,14 @@ Rcpp::List
               
               dir_sample_sum = 0;
               
-              for (unsigned int k = 0; k < K[g]; ++k) {
+              for (int k = 0; k < K[g]; ++k) {
                 dir_sample[k] = as<double>(Rcpp::rgamma(1, alpha[k], 1));
                 dir_sample_sum += dir_sample[k];
               }
               
               // check that: all( pi's > 10^{-100} )
               cond = true;
-              for (unsigned int k = 0; k < K[g]; ++k) {
+              for (int k = 0; k < K[g]; ++k) {
                 dir_sample[k] = dir_sample[k]/dir_sample_sum;
                 
                 if( ( Rcpp::NumericVector::is_na(dir_sample[k]) ) || ( dir_sample[k] < pow(10, -100) )  ) {
@@ -319,7 +319,7 @@ Rcpp::List
               }
               
               if(cond){
-                for (unsigned int k = 0; k < K[g]; ++k) {
+                for (int k = 0; k < K[g]; ++k) {
                   pi_new[n][g](i, k) = dir_sample[k];
                 }
               }
@@ -364,7 +364,7 @@ Rcpp::List
             cond = true;
             
             // check if there are NA's in the proposed values:
-            for (unsigned int k = 0; k < K[g]; ++k) {
+            for (int k = 0; k < K[g]; ++k) {
               if( NumericVector::is_na(alpha_prop[k]) ){
                 cond = false;
                 Rcout << "1st control failed: " << std::endl << alpha_prop << std::endl;

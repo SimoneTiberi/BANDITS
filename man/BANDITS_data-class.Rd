@@ -11,7 +11,7 @@
 }
 \value{
 \itemize{
-\item \code{show(x)}: returns the number of genes and transcripts in the \code{BANDITS_data} object.
+\item \code{show(object)}: returns the number of genes and transcripts in the \code{BANDITS_data} object.
 }
 }
 \description{

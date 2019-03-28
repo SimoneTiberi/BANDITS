@@ -17,7 +17,7 @@ using namespace Rcpp;
 
 void centerNumericMatrix_bis(Rcpp::NumericMatrix& X) {
   const int m = X.ncol();
-  for (int j = 0; j < m; ++j) {
+  for (unsigned int j = 0; j < m; ++j) {
     X(Rcpp::_, j) = X(Rcpp::_, j) - Rcpp::mean(X(Rcpp::_, j));
   }
 }
@@ -39,8 +39,8 @@ void covRcpp_bis(Rcpp::NumericMatrix& mcmc,
   // COV only updates the bottom right corner element!
   
   // Computing the covariance matrix
-  for (int i = 0; i < K; ++i) {
-    for (int j = 0; j <= i; ++j) { // I REMOVE THE FIRST 100 ROWS OF THE MCMC AND START FROM THE 101-st row.
+  for (unsigned int i = 0; i < K; ++i) {
+    for (unsigned int j = 0; j <= i; ++j) { // I REMOVE THE FIRST 100 ROWS OF THE MCMC AND START FROM THE 101-st row.
       cov(i,j) = c_prop * Rcpp::sum(Y(Rcpp::_, i)*Y(Rcpp::_, j))/df;
       cov(j,i) = cov(i,j);
     }
@@ -313,7 +313,7 @@ Rcpp::List
           rmultinom(f(j, i), prob.begin(), K, n.begin());
           //          gsl_ran_multinomial(r, K, f(j, i), prob.begin(), (unsigned int *) n.begin());
           
-          for (int k = 0; k < K; ++k) {
+          for (unsigned int k = 0; k < K; ++k) {
             Y_new[k] += n[k];
           }
         }
@@ -383,7 +383,7 @@ Rcpp::List
           rmultinom(f(j, N_1+i), prob.begin(), K, n.begin());
           //          gsl_ran_multinomial(r, K, f(j, N+i), prob.begin(), (unsigned int *) n.begin());
           
-          for (int k = 0; k < K; ++k) {
+          for (unsigned int k = 0; k < K; ++k) {
             Y_new[k] += n[k];
           }
         }
