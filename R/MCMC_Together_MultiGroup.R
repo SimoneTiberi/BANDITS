@@ -3,7 +3,9 @@ wald_DTU_test_MultiGroup_Together = function(f, l, exon_id, N, R, burn_in, mean_
   N_groups = length(N)
   n_genes = length(genes)
   
-  gene_id = sapply(genes, function(x) names(transcripts) == x)
+  gene_id = vapply(genes, function(x) names(transcripts) == x, FUN.VALUE = logical(K_tot))
+  # sapply(genes, function(x) names(transcripts) == x)
+  
   order = unlist(apply(gene_id, 2, which))
   
   # order transcripts such that the first K[1] transcripts refer to the 1st gene, and so on.
@@ -14,9 +16,9 @@ wald_DTU_test_MultiGroup_Together = function(f, l, exon_id, N, R, burn_in, mean_
   
   # TRUE-FALSE matrix telling me what genes are associated to what transcripts!
   # gene_id[,i] refers to the i-th gene.
-  
-  K = sapply(genes, function(x) sum(names(transcripts) == x))
-  
+  K = vapply(genes, function(x) sum(names(transcripts) == x), FUN.VALUE = integer(1))
+  # sapply(genes, function(x) sum(names(transcripts) == x))
+
   ### ### ### if K == 1, do not provide a p.value, set pi = 1 in the function above!!!
   if( all(K == 1) ){
     return( NULL ) # if all genes have 1 transcript only, I cannot infer any DTU genes so I return all -1's

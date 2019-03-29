@@ -35,7 +35,8 @@
 #' 
 #' # load gene_to_transcript matching:
 #' data("GeneTr_id", package = "BANDITS")
-#' # GeneTr_id contains transcripts ids on the first column and the corresponding gene ids on the second column:
+#' # GeneTr_id contains transcripts ids on the first column
+#' # and the corresponding gene ids on the second column:
 #' head(GeneTr_id)
 #' 
 #' # Specify the directory of the transcript level estimated counts.

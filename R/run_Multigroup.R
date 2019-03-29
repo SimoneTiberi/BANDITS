@@ -25,14 +25,15 @@ test_DTU_multi_group = function(BANDITS_data, mean_log_precision, sd_log_precisi
   
   p_values_ALL = foreach(p = final_order,
                          .packages=c("BANDITS"),
-                         .errorhandling = "pass") %dorng%{
+                         .errorhandling = "stop") %dorng%{
     # ORDER counts to respect the ordering in "groups" via 'ord_samples'
     f = as.matrix(BANDITS_data@counts[[p]][,ord_samples])
     sel_samples = colSums(f) > 0.5
    
     # select samples with BANDITS_data only:
     f = f[, sel_samples ]
-    N_mg = sapply(splits, function(id) sum(sel_samples[id]))
+    N_mg = vapply(splits, function(id) sum(sel_samples[id]), FUN.VALUE = integer(1))
+    # sapply(splits, function(id) sum(sel_samples[id]))
     sel_groups = N_mg > 0.5 # sel groups to keep (if at least 1 sample!):
     N_mg = N_mg[ sel_groups ] # remove groups with 0 counts.
     
@@ -175,7 +176,7 @@ test_DTU_multi_group = function(BANDITS_data, mean_log_precision, sd_log_precisi
 
   p_values_tr = cbind(p_values_tr, mode_groups)
   
-  cond = sapply(p_values_tr[,1], is.null) == FALSE
+  cond = !vapply(p_values_tr[,1], is.null, FUN.VALUE = logical(1))
   p_values_tr = p_values_tr[cond,] # filter null results
 
   # COMPUTE ADJUSTED P.VALS:
@@ -206,12 +207,14 @@ test_DTU_multi_group = function(BANDITS_data, mean_log_precision, sd_log_precisi
   # Return Convergence results:
   #########################################################################################################
   convergence = lapply(p_values_ALL, function(x) x[[2]])
-  n_genes_convergence = sapply( BANDITS_data@genes[final_order], length)
+  n_genes_convergence = vapply( BANDITS_data@genes[final_order], length, FUN.VALUE = integer(1))
+  # sapply( BANDITS_data@genes[final_order], length)
   genes_convergence = unlist(BANDITS_data@genes[final_order])
   
   convergence = rep(convergence, n_genes_convergence)
   
-  num = sapply(convergence, class) == "numeric"
+  num = vapply(convergence, is.numeric, FUN.VALUE = logical(1))
+  # sapply(convergence, class) == "numeric"
   convergence = convergence[num]
   convergence = do.call(rbind, convergence)
   rownames(convergence) = genes_convergence[num]

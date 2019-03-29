@@ -48,8 +48,8 @@ MCMC_chain_FULL = function(f, l, exon_id, N_1, N_2, R, K, burn_in, mean_log_prec
   
   if(convergence[1] == 1){ # if it converged:
     if(convergence[2] > 1){ # remove burn-in estimated by heidel.diag (which is, AT MOST, half of the chain):
-      res[[1]] = res[[1]][seq.,][-{1:(convergence[2]-1)},]
-      res[[2]] = res[[2]][seq.,][-{1:(convergence[2]-1)},]
+      res[[1]] = res[[1]][seq.,][-seq_len(convergence[2]-1),]
+      res[[2]] = res[[2]][seq.,][-seq_len(convergence[2]-1),]
     }else{ # if convergence[2] == 1, seq. has altready been defined above.
       if(R > 10^4){ # thin if R > 10^4
         res[[1]] = res[[1]][seq.,]
@@ -68,7 +68,7 @@ MCMC_chain_FULL = function(f, l, exon_id, N_1, N_2, R, K, burn_in, mean_log_prec
   # thin if R > 10^4 (to return 10^4 values).
   
   # save whether it's the first run or not (i.e. whether the convergence test failed).
-  list( res[1:2], convergence, FIRST_chain )  # I return the list of MCMC chains, excluding the burn-in
+  list( res[seq_len(2)], convergence, FIRST_chain )  # I return the list of MCMC chains, excluding the burn-in
 }
 
 
@@ -93,8 +93,8 @@ compute_pval_FULL = function(A, B, K, N){
   
   p = K-1
   
-  p_value = vapply(1:K, function(k){
-    sel  = {1:K}[-k]
+  p_value = vapply(seq_len(K), function(k){
+    sel  = seq_len(K)[-k]
     # Normal (classical Wald test)
     stat = t(mode[sel]) %*% ginv(CV[sel, sel], tol = 0) %*% mode[sel]
     1-pchisq(stat, df = K-1)
@@ -115,7 +115,7 @@ compute_pval_FULL = function(A, B, K, N){
   # In this case I can also consider less stringent constraints such as the Chi_2 maybe.
   
   # Score to highlight the impact of DS:
-  max_diff_pi_T = max(abs(mode_A - mode_B)); top2_diff_pi_T = sum(sort(abs(mode_A - mode_B), decreasing = TRUE)[1:2])
+  max_diff_pi_T = max(abs(mode_A - mode_B)); top2_diff_pi_T = sum(sort(abs(mode_A - mode_B), decreasing = TRUE)[seq_len(2)])
   
   list( c(  mean(p_value),   p_value[sel_1],   p_value[sel_2],   p_value[ran], inverted, max_diff_pi_T, top2_diff_pi_T ),
         trancript_res,

@@ -25,7 +25,8 @@
 #' 
 #' # load gene_to_transcript matching:
 #' data("GeneTr_id", package = "BANDITS")
-#' # GeneTr_id contains transcripts ids on the first column and the corresponding gene ids on the second column:
+#' # GeneTr_id contains transcripts ids on the first column
+#' # and the corresponding gene ids on the second column:
 #' head(GeneTr_id)
 #' 
 #' # Specify the directory of the transcript level estimated counts.
@@ -89,7 +90,8 @@ filter_transcripts = function(gene_to_transcript, transcript_counts,
     transcript_split_by_gene = split(data.frame(transcript_counts), as.character(transcript_counts_gene_id))
     transcript_split_by_gene = lapply(transcript_split_by_gene, data.frame)
     
-    gene_sums = sapply(transcript_split_by_gene, sum)
+    gene_sums = vapply(transcript_split_by_gene, sum, numeric(1))
+    # sapply(transcript_split_by_gene, sum)
     genes_sel = names(gene_sums)[ gene_sums > min_gene_counts ]
     
     transcripts_to_keep = transcripts_to_keep[ transcripts_to_keep %in% Tr_id[Gene_id %in% genes_sel] ]

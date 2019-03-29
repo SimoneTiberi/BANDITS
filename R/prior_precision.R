@@ -29,7 +29,8 @@
 #' 
 #' # load gene_to_transcript matching:
 #' data("GeneTr_id", package = "BANDITS")
-#' # GeneTr_id contains transcripts ids on the first column and the corresponding gene ids on the second column:
+#' # GeneTr_id contains transcripts ids on the first column
+#' # and the corresponding gene ids on the second column:
 #' head(GeneTr_id)
 #' 
 #' # Specify the directory of the transcript level estimated counts.
@@ -47,7 +48,9 @@
 #' 
 #' ## Optional (recommended): infer an informative prior for the precision parameter
 #' 
-#' # Use the same filtering criteria as in \code{\link{filter_transcripts}}; if transcript pre-filtering is not performed, set \code{min_transcript_proportion},  \code{min_transcript_counts} and \code{min_gene_counts} to 0.
+#' # Use the same filtering criteria as in \code{\link{filter_transcripts}}; 
+#' # if transcript pre-filtering is not performed, set \code{min_transcript_proportion},
+#' # \code{min_transcript_counts} and \code{min_gene_counts} to 0.
 #' 
 #' set.seed(61217)
 #' prec = prior_precision(gene_to_transcript = GeneTr_id, transcript_counts = counts,
@@ -55,7 +58,8 @@
 #'                        min_gene_counts = 20, n_cores = 2)
 #' 
 #' # Plot the histogram of the genewise log-precision estimates.
-#' # The black solid line represents the normally distributed prior distribution for the log-precision parameter.
+#' # The black solid line represents the normally distributed prior distribution 
+#' # for the log-precision parameter.
 #' plot_precision(prec)
 #' 
 #' @author Simone Tiberi
@@ -119,7 +123,8 @@ prior_precision = function(gene_to_transcript, transcript_counts,
 #' 
 #' # load gene_to_transcript matching:
 #' data("GeneTr_id", package = "BANDITS")
-#' # GeneTr_id contains transcripts ids on the first column and the corresponding gene ids on the second column:
+#' # GeneTr_id contains transcripts ids on the first column
+#' # and the corresponding gene ids on the second column:
 #' head(GeneTr_id)
 #' 
 #' # Specify the directory of the transcript level estimated counts.
@@ -137,7 +142,9 @@ prior_precision = function(gene_to_transcript, transcript_counts,
 #' 
 #' ## Optional (recommended): infer an informative prior for the precision parameter
 #' 
-#' # Use the same filtering criteria as in \code{\link{filter_transcripts}}; if transcript pre-filtering is not performed, set \code{min_transcript_proportion},  \code{min_transcript_counts} and \code{min_gene_counts} to 0.
+#' # Use the same filtering criteria as in \code{\link{filter_transcripts}}; 
+#' # if transcript pre-filtering is not performed, set \code{min_transcript_proportion},
+#' # \code{min_transcript_counts} and \code{min_gene_counts} to 0.
 #' 
 #' set.seed(61217)
 #' prec = prior_precision(gene_to_transcript = GeneTr_id, transcript_counts = counts,
@@ -145,7 +152,8 @@ prior_precision = function(gene_to_transcript, transcript_counts,
 #'                        min_gene_counts = 20, n_cores = 2)
 #' 
 #' # Plot the histogram of the genewise log-precision estimates.
-#' # The black solid line represents the normally distributed prior distribution for the log-precision parameter.
+#' # The black solid line represents the normally distributed prior distribution 
+#' # for the log-precision parameter.
 #' plot_precision(prec)
 #' 
 #' @author Simone Tiberi

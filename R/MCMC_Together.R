@@ -2,7 +2,9 @@ wald_DTU_test_Together_FULL = function(f, l, exon_id, N_1, N_2, R, burn_in,
                                        mean_log_precision, sd_log_precision,
                                        genes, transcripts,
                                        theshold_pval = 0.1){
-  gene_id = sapply(genes, function(x) names(transcripts) == x)
+  K_tot = length(transcripts)
+  gene_id = vapply(genes, function(x) names(transcripts) == x, FUN.VALUE = logical(K_tot))
+  # sapply(genes, function(x) names(transcripts) == x)
   order = unlist(apply(gene_id, 2, which))
   
   # order transcripts such that the first K[1] transcripts refer to the 1st gene, and so on.
@@ -13,8 +15,9 @@ wald_DTU_test_Together_FULL = function(f, l, exon_id, N_1, N_2, R, burn_in,
   
   # TRUE-FALSE matrix telling me what genes are associated to what transcripts!
   # gene_id[,i] refers to the i-th gene.
-  
-  K = sapply(genes, function(x) sum(names(transcripts) == x))
+
+  K = vapply(genes, function(x) sum(names(transcripts) == x), FUN.VALUE = integer(1))
+  # sapply(genes, function(x) sum(names(transcripts) == x))
   
   ### ### ### if K == 1, do not provide a p.value, set pi = 1 in the function above!!!
   if( all(K == 1) ){
@@ -60,7 +63,7 @@ wald_DTU_test_Together_FULL = function(f, l, exon_id, N_1, N_2, R, burn_in,
     return( list(p.vals = pvals_res, convergence = chain[[2]]) ) # return the convergence result too (to check they are all converged with reasonable burn-in).
   }
   
-  for(g in 1:length(K)){
+  for(g in seq_along(K)){
     if(K[g] > 1){
       chain[[1]][[1]][[g]] = rbind( chain[[1]][[1]][[g]], chain_2[[1]][[1]][[g]])
       chain[[1]][[2]][[g]] = rbind( chain[[1]][[2]][[g]], chain_2[[1]][[2]][[g]])
@@ -82,12 +85,12 @@ MCMC_chain_Together_FULL = function(f, l, exon_id, N_1, N_2, R, K, gene_id, burn
   one_transcript = colSums(exon_id) == 1
   
   n_genes = length(K); # nr of genes in the group
-  pi_new_A = lapply(X = 1:n_genes, FUN = create_pi_new, K = K, N = N_1 ) 
-  pi_new_B = lapply(X = 1:n_genes, FUN = create_pi_new, K = K, N = N_2 )
+  pi_new_A = lapply(X = seq_len(n_genes), FUN = create_pi_new, K = K, N = N_1 ) 
+  pi_new_B = lapply(X = seq_len(n_genes), FUN = create_pi_new, K = K, N = N_2 )
   
   # Matrix of posterior chains for alpha
   mcmc_alpha_A = mcmc_alpha_B = list()
-  for(g in 1:n_genes){
+  for(g in seq_len(n_genes)){
     if(One_transcript[g] == FALSE){
       mcmc_alpha_A[[g]] = matrix(NA, nrow = R+burn_in, ncol = K[g])
       mcmc_alpha_B[[g]] = matrix(NA, nrow = R+burn_in, ncol = K[g]) # hyper-parameters
@@ -98,7 +101,7 @@ MCMC_chain_Together_FULL = function(f, l, exon_id, N_1, N_2, R, K, gene_id, burn
   
   alpha_new_A = alpha_new_B = alpha_new_A_original = alpha_new_B_original = list()
   chol_A = list(); chol_B = list();
-  for(g in 1:n_genes){
+  for(g in seq_len(n_genes)){
     if(One_transcript[g] == FALSE){
       chol_A[[g]] = matrix(NA, nrow = K[g], ncol = K[g])
       chol_B[[g]] = matrix(NA, nrow = K[g], ncol = K[g])
@@ -139,15 +142,15 @@ MCMC_chain_Together_FULL = function(f, l, exon_id, N_1, N_2, R, K, gene_id, burn
   
   if(convergence[1] == 1){ # if it converged:
     if(convergence[2] > 1){ # remove burn-in estimated by heidel.diag (which is, AT MOST, half of the chain):
-      for(g in 1:n_genes){
+      for(g in seq_len(n_genes)){
         if(One_transcript[g] == FALSE){ # only for genes with >1 transcript
-          res[[1]][[g]] = res[[1]][[g]][seq.,][-{1:(convergence[2]-1)},]
-          res[[2]][[g]] = res[[2]][[g]][seq.,][-{1:(convergence[2]-1)},]
+          res[[1]][[g]] = res[[1]][[g]][seq.,][-seq_len(convergence[2]-1),]
+          res[[2]][[g]] = res[[2]][[g]][seq.,][-seq_len(convergence[2]-1),]
         }
       }
     }else{ # if convergence[2] == 1, seq. has already been defined above.
       if(R > 10^4){ # thin only if R > 10^4
-        for(g in 1:n_genes){
+        for(g in seq_len(n_genes)){
           if(One_transcript[g] == FALSE){ # only for genes with >1 transcript
             res[[1]][[g]] = res[[1]][[g]][seq.,]
             res[[2]][[g]] = res[[2]][[g]][seq.,]
@@ -169,7 +172,7 @@ MCMC_chain_Together_FULL = function(f, l, exon_id, N_1, N_2, R, K, gene_id, burn
   # thin if R > 10^4 (to return 10^4 values).
   
   # save whether it's the first run or not (i.e. whether the convergence test failed).
-  list( res[1:2], convergence, FIRST_chain ) 
+  list( res[seq_len(2)], convergence, FIRST_chain ) 
 }
 
 
@@ -181,7 +184,7 @@ pval_compute_Together_FULL = function(A, B, K, N, genes, gene_id, transcripts){
   res_tr = mode_A = mode_B = list()
   # do usual testing procedure on each gene separately.
   
-  for(g in 1:length(K)){
+  for(g in seq_along(K)){
     if(K[g] > 1){ # if 1 transcripts per gene I keep the result equal to -1
       pval_pi_T = compute_pval_FULL( A = A[[g]], B = B[[g]], K = K[g], N = N)
       

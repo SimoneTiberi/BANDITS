@@ -132,7 +132,8 @@ pval_compute_MultiGroup = function(mcmc, K, N_groups){
   # Random sample to decrease the correlation between w samples!
   
   # this returns a matrix: mode_groups[,1] represents the proportions of transcript 1 in all N_groups.
-  mode_groups = sapply(mcmc, function(x) apply(x, 2, sum) ) # find.mode, adjust = 10 (mode) or sum (mean)
+  mode_groups = vapply(mcmc, function(x) apply(x, 2, sum), FUN.VALUE = numeric(K) ) 
+  # sapply(mcmc, function(x) apply(x, 2, sum) ) # find.mode, adjust = 10 (mode) or sum (mean)
   mode_groups = apply( mode_groups, 2, function(x) x/sum(x))
   
   # need to remove 1 parameter to make sure I don't test it twice!

@@ -26,7 +26,8 @@
 #' 
 #' # load gene_to_transcript matching:
 #' data("GeneTr_id", package = "BANDITS")
-#' # GeneTr_id contains transcripts ids on the first column and the corresponding gene ids on the second column:
+#' # GeneTr_id contains transcripts ids on the first column
+#' # and the corresponding gene ids on the second column:
 #' head(GeneTr_id)
 #' 
 #' # Specify the directory of the transcript level estimated counts.
@@ -91,7 +92,8 @@ create_data = function(gene_to_transcript,
   if(is.null(transcripts_to_keep)){
     sep = "_"
     while(TRUE){
-      cond = sum(sapply(Tr_id, function(x){  grepl(sep, x, fixed=TRUE) })) == 0
+      cond = sum( vapply(Tr_id, function(x){  grepl(sep, x, fixed=TRUE) }, FUN.VALUE = logical(1)) ) == 0
+        # sum(sapply(Tr_id, function(x){  grepl(sep, x, fixed=TRUE) })) == 0
       if(cond){
         break
       }
@@ -100,7 +102,8 @@ create_data = function(gene_to_transcript,
   }else{
     sep = "_"
     while(TRUE){
-      cond = sum(sapply(transcripts_to_keep, function(x){  grepl(sep, x, fixed=TRUE) })) == 0
+      cond = sum( vapply(transcripts_to_keep, function(x){  grepl(sep, x, fixed=TRUE) }, FUN.VALUE = logical(1)) ) == 0
+        # sum(sapply(transcripts_to_keep, function(x){  grepl(sep, x, fixed=TRUE) })) == 0
       if(cond){
         break
       }
@@ -110,7 +113,7 @@ create_data = function(gene_to_transcript,
   
   if( n_cores > 1){ # if n_cores > 1, I use parallel computing tools
     suppressWarnings({
-      cl <- makeCluster(n_cores);
+      cl = makeCluster(n_cores);
     })
 
     if(is.null(transcripts_to_keep)){
@@ -131,10 +134,12 @@ create_data = function(gene_to_transcript,
   message("Data has been loaded")
   
   # merge the ids of all classes here:
-  all_classes = unique( unlist( sapply(x, function(y){y$class_ids}) ) )
+  all_classes = unique( unlist( lapply(x, function(y){y$class_ids}) ) )
+  # unique( unlist( sapply(x, function(y){y$class_ids}) ) )
   
   # I turn the transcript id from a single character into a vector
-  all_classes_vector = sapply( all_classes, strsplit, split = sep, fixed = TRUE )
+  all_classes_vector = vapply( all_classes, strsplit, split = sep, fixed = TRUE, FUN.VALUE = list(1) )
+  # sapply( all_classes, strsplit, split = sep, fixed = TRUE )
 
   # match the class id of each sample to the long vector containing all classes ids.
   match_classes = lapply(x, function(u) match(u$class_ids, all_classes) )
@@ -151,7 +156,8 @@ create_data = function(gene_to_transcript,
   }
   
   # nr of transcripts per class:
-  n <- sapply(all_classes_vector, length)
+  n = vapply(all_classes_vector, length, FUN.VALUE = integer(1))
+  # sapply(all_classes_vector, length)
   # create a data.frame structure keeping the info of what transcritps belong to what classes:
   df_all_classes = data.frame( Class_id=rep(seq_along(n), n), Tr_id = unlist(all_classes_vector) )
   rownames(df_all_classes) = c()
@@ -168,8 +174,12 @@ create_data = function(gene_to_transcript,
   genes_SELECTED = unique( df_all_classes$Gene_id ) #  All genes
   N_genes = length(genes_SELECTED)
   
+  n = vapply(genes_in_classes, length, FUN.VALUE = integer(1))
+  # sapply(genes_in_classes, length)
+  
   ## I need to consider classes with 1 gene only...easy: "cond = sapply(genes_in_classes, length) == 1"
-  cond_1_gene_per_class = sapply(genes_in_classes, length) == 1 # But I also need to make sure that the genes respecting "cond" does not happear in other classes!
+  cond_1_gene_per_class = ( n == 1 )
+  # sapply(genes_in_classes, length) == 1 # But I also need to make sure that the genes respecting "cond" does not happear in other classes!
   More_genes_in_classes = unique(unlist(genes_in_classes[cond_1_gene_per_class ==FALSE])) # list the genes happearing together in at least 1 class
   
   # 1 - mean(cond_1_gene_per_class) # mean of equiv classes with tr from > 1 gene.
@@ -181,11 +191,11 @@ create_data = function(gene_to_transcript,
   # check what classes have at least 1 gene happearing with other genes in at least 1 class:
   # in other words, check whether it's on the "More_genes_in_classes" list or not.
   
-  n <- sapply(genes_in_classes, length)
   df_tmp = data.frame( Class_id=rep(seq_along(n), n), Gene_id = unlist(genes_in_classes))
   df_tmp$More_genes_in_classes = df_tmp$Gene_id %in% More_genes_in_classes
   cond_1_gene_per_class_FINAL = split(df_tmp$More_genes_in_classes, df_tmp$Class_id)
-  cond_1_gene_per_class_FINAL = !sapply(cond_1_gene_per_class_FINAL, any)
+  cond_1_gene_per_class_FINAL = !vapply(cond_1_gene_per_class_FINAL, any, FUN.VALUE = logical(1))
+  # !sapply(cond_1_gene_per_class_FINAL, any)
   # 0.3 seconds
   
   genes_names_Unique = as.character( genes_in_classes[cond_1_gene_per_class_FINAL] )
@@ -218,7 +228,8 @@ create_data = function(gene_to_transcript,
   # Finally, for each gene, consider the full list of transcripts (to define ... and ...)
   # and make a matrix of 0, 1 indicating, for each class, what transcripts they have.
   Transcripts_per_gene_Unique   = lapply(classes_split_per_gene_Unique, function(x){ unique(unlist(x)) })
-  N_transcripts_per_gene_Unique = sapply(Transcripts_per_gene_Unique, length)
+  N_transcripts_per_gene_Unique = vapply(Transcripts_per_gene_Unique, length, FUN.VALUE = integer(1))
+  # sapply(Transcripts_per_gene_Unique, length)
   
   N_genes_Unique = length(counts_split_per_gene_Unique);
   
@@ -226,7 +237,8 @@ create_data = function(gene_to_transcript,
   # length(classes_split_per_gene_Unique) == length(counts_split_per_gene_Unique) # TRUE
   
   classes_Unique = lapply(seq_len(N_genes_Unique), function(x){
-    m = sapply(classes_split_per_gene_Unique[[x]], function(y){ Transcripts_per_gene_Unique[[x]] %in% y })
+    m = vapply(classes_split_per_gene_Unique[[x]], function(y){ Transcripts_per_gene_Unique[[x]] %in% y }, FUN.VALUE = logical( length( Transcripts_per_gene_Unique[[x]] ) ))
+    # sapply(classes_split_per_gene_Unique[[x]], function(y){ Transcripts_per_gene_Unique[[x]] %in% y })
     ifelse(m, 1, 0)
   })
   # 0.7 seconds (Mac)
@@ -234,7 +246,8 @@ create_data = function(gene_to_transcript,
   ################################################################################################
   # Associate the Median eff length of transcripts:
   ################################################################################################
-  n <- sapply(Transcripts_per_gene_Unique, length)
+  n = vapply(Transcripts_per_gene_Unique, length, FUN.VALUE = integer(1))
+  # sapply(Transcripts_per_gene_Unique, length)
   df_eff_len_Unique = data.frame( Gene_id=rep(seq_along(n), n), Tr_id = unlist(Transcripts_per_gene_Unique))
   df_eff_len_Unique$eff_len = eff_len[ match(df_eff_len_Unique$Tr_id, names(eff_len))  ]
   
@@ -250,7 +263,8 @@ create_data = function(gene_to_transcript,
   all_counts_Together         = all_counts[cond_1_gene_per_class_FINAL==FALSE,]
   all_classes_vector_Together = all_classes_vector[cond_1_gene_per_class_FINAL==FALSE]
   genes_in_classes_Together   = genes_in_classes[cond_1_gene_per_class_FINAL==FALSE]
-  n_genes_per_class           = sapply(genes_in_classes_Together, length)
+  n_genes_per_class           = vapply(genes_in_classes_Together, length, FUN.VALUE = integer(1))
+  # sapply(genes_in_classes_Together, length)
   
   # First, I need to separate classes corresponding to 1 gene only to classes corresponding to >1 gene...DONE
   # Now I need to group together the information about genes modelled together...they could be highly mixed!
@@ -490,7 +504,7 @@ create_data = function(gene_to_transcript,
   ################################################################################################
   # Associate the Median eff length of transcripts:
   ################################################################################################
-  n <- sapply(Transcripts_per_GROUP, length)
+  n = sapply(Transcripts_per_GROUP, length)
   df_eff_len_Unique = data.frame( Class_id=rep(seq_along(n), n), Tr_id = unlist(Transcripts_per_GROUP))
   df_eff_len_Unique$eff_len = eff_len[ match(df_eff_len_Unique$Tr_id, names(eff_len))  ]
   
@@ -506,7 +520,7 @@ create_data = function(gene_to_transcript,
   
   # use the gene_to_transcript matrix
   
-  n <- sapply(Transcripts_per_GROUP, length)
+  n = sapply(Transcripts_per_GROUP, length)
   df_tmp = data.frame( Class_id=rep(seq_along(n), n), Tr_id = unlist(Transcripts_per_GROUP))
   df_tmp$Gene_id = Gene_id[ match(df_tmp$Tr_id, Tr_id)  ]
   
@@ -600,16 +614,16 @@ create_data = function(gene_to_transcript,
 }
 
 # SEPARATE FUNCTION FROM create_data; make it generic to hold with ANY input (Salmon, kallisto, etc...)
-read_eq_classes <- function(fn, sep){
-  fr <- fread(fn, sep = " ", quote = "", header = FALSE)
-  ids <- fr$V1[3:(as.integer(fr$V1[1])+2)] # vector with all transcript ids
-  ecs <- fr$V1[(as.integer(fr$V1[1])+3):nrow(fr)]
-  ecs.s <- strsplit(ecs,"\t",fixed=TRUE)
+read_eq_classes = function(fn, sep){
+  fr = fread(fn, sep = " ", quote = "", header = FALSE)
+  ids = fr$V1[3:(as.integer(fr$V1[1])+2)] # vector with all transcript ids
+  ecs = fr$V1[(as.integer(fr$V1[1])+3):nrow(fr)]
+  ecs.s = strsplit(ecs,"\t",fixed=TRUE)
   
-  cnt <- as.integer(sapply(ecs.s, last)) # counts for each equiv class
-  trans <- sapply(ecs.s, function(u) 1+as.integer(u[2:(length(u)-1)]))
+  cnt = as.integer(sapply(ecs.s, last)) # counts for each equiv class
+  trans = sapply(ecs.s, function(u) 1+as.integer(u[2:(length(u)-1)]))
   
-  class_ids <- vapply(trans, function(u) paste(sort(ids[unique(u)]),collapse=sep), FUN.VALUE = "id") # I create the id for the class, made of all transcripts of the class separated by _
+  class_ids = vapply(trans, function(u) paste(sort(ids[unique(u)]),collapse=sep), FUN.VALUE = "id") # I create the id for the class, made of all transcripts of the class separated by _
 
   # check if there are any duplicated classes:  
   if( sum(duplicated(class_ids)) > 0.5 ){ # use the other method, with transcripts_to_keep = all transcripts
@@ -621,14 +635,14 @@ read_eq_classes <- function(fn, sep){
 
 # Make function to import eq_classed from kallisto too!
 # Load classes with fread in a separate function.
-read_eq_classes_filteringTranscripts <- function(fn, transcripts_to_keep, sep) {
-  fr <- fread(fn, sep = " ", quote = "", header = FALSE)
-  ids <- fr$V1[3:(as.integer(fr$V1[1])+2)] # vector with all transcript ids
-  ecs <- fr$V1[(as.integer(fr$V1[1])+3):nrow(fr)]
-  ecs.s <- strsplit(ecs,"\t",fixed=TRUE)
+read_eq_classes_filteringTranscripts = function(fn, transcripts_to_keep, sep) {
+  fr = fread(fn, sep = " ", quote = "", header = FALSE)
+  ids = fr$V1[3:(as.integer(fr$V1[1])+2)] # vector with all transcript ids
+  ecs = fr$V1[(as.integer(fr$V1[1])+3):nrow(fr)]
+  ecs.s = strsplit(ecs,"\t",fixed=TRUE)
   
-  cnt <- as.integer(sapply(ecs.s, last)) # counts for each equiv class
-  trans <- sapply(ecs.s, function(u) 1+as.integer(u[2:(length(u)-1)]))
+  cnt = as.integer(sapply(ecs.s, last)) # counts for each equiv class
+  trans = sapply(ecs.s, function(u) 1+as.integer(u[2:(length(u)-1)]))
   trans = lapply(trans, as.integer)
   trans = lapply(trans, unique)
   
@@ -637,8 +651,8 @@ read_eq_classes_filteringTranscripts <- function(fn, transcripts_to_keep, sep) {
   ids_sel = ids[SEL_transcripts] # transcript ids, filtered
   
   #############  #############  #############  #############  #############  #############
-  n <- sapply(trans, length)
-  df <- data.frame(Class_id=rep(seq_along(n), n), Tr_id = unlist(trans))
+  n = sapply(trans, length)
+  df = data.frame(Class_id=rep(seq_along(n), n), Tr_id = unlist(trans))
   
   #df = df[df$Tr_id %in% SEL_transcripts, ]
   #trans_sel = split(df$Tr_id, df$Class_id)
@@ -653,7 +667,7 @@ read_eq_classes_filteringTranscripts <- function(fn, transcripts_to_keep, sep) {
   # Now I filter out classes with NO transcripts (where all transcripts were filtered out):
   SEL_classes = {sapply(trans_sel, length) > 0} # if length == 0, I have 0 transcripts in a class
 
-  class_ids_sel <- vapply(trans_sel[SEL_classes], function(u) paste(sort(ids[u]),collapse=sep), FUN.VALUE = "id") # I create the id for the class, made of all transcripts of the class separated by _
+  class_ids_sel = vapply(trans_sel[SEL_classes], function(u) paste(sort(ids[u]),collapse=sep), FUN.VALUE = "id") # I create the id for the class, made of all transcripts of the class separated by _
 
   cnt_sel = cnt[SEL_classes]
   
