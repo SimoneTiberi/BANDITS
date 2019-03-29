@@ -195,7 +195,7 @@
 #'
 #' @seealso \code{\link{test_DTU}}, \code{\link{create_data}}, \code{\linkS4class{BANDITS_data}}
 #' 
-#' @aliases BANDITS_test, length, top_genes, top_transcripts, convergence, gene, transcript, plot_proportions
+#' @aliases BANDITS_test length top_genes top_transcripts convergence gene transcript plot_proportions
 #' 
 #' @export
 setClass("BANDITS_test", 
