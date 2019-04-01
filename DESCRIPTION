@@ -1,7 +1,7 @@
 Package: BANDITS
 Type: Package
 Title: BANDITS: Bayesian ANalysis of DIfferenTial Splicing
-Version: 0.99.6
+Version: 0.99.7
 Date: 2019-02-19
 Author: Simone Tiberi
 Maintainer: Simone Tiberi <simone.tiberi@uzh.ch>
@@ -26,4 +26,5 @@ SystemRequirements: C++11
 ByteCompile: false
 VignetteBuilder: knitr
 RoxygenNote: 6.1.1
+LazyData: true
 URL: https://github.com/SimoneTiberi/BANDITS

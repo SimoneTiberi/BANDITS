@@ -1,3 +1,4 @@
+---
 title: "BANDITS: Bayesian ANalysis of DIfferenTial Splicing"
 author: "Simone Tiberi and Mark D. Robinson"
 date: "`r format(Sys.Date(), '%m/%d/%Y')`"
@@ -12,6 +13,7 @@ vignette: >
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
   %\usepackage[utf8]{inputenc}
+---
 
 ```{r setup, echo=FALSE, results="hide"}
 knitr::opts_chunk$set(tidy=FALSE, cache=TRUE,
