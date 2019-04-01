@@ -16,7 +16,7 @@ using namespace Rcpp;
 //using namespace arma;
 
 void centerNumericMatrix_bis(Rcpp::NumericMatrix& X) {
-  const unsigned unint m = X.ncol();
+  const unsigned int m = X.ncol();
   for (unsigned int j = 0; j < m; ++j) {
     X(Rcpp::_, j) = X(Rcpp::_, j) - Rcpp::mean(X(Rcpp::_, j));
   }
