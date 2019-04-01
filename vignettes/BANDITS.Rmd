@@ -1,18 +1,26 @@
 ---
 title: "BANDITS: Bayesian ANalysis of DIfferenTial Splicing"
-author: "Simone Tiberi and Mark D. Robinson"
+author:
+- name: Simone Tiberi
+  affiliation:
+  - &IMLS Institute for Molecular Life Sciences, University of Zurich, Switzerland
+  - &SIB SIB Swiss Institute of Bioinformatics, University of Zurich, Switzerland
+  email: simone.tiberi@uzh.ch
+- name: Mark D Robinson
+  affiliation:
+  - *IMLS
+  - *SIB
+package: "`r BiocStyle::pkg_ver('BANDITS')`"
 date: "`r format(Sys.Date(), '%m/%d/%Y')`"
-output:
-  rmarkdown::html_document:
-    highlight: pygments
-    toc: true
-    fig_width: 6
+output: 
+  BiocStyle::html_document
 bibliography: References.bib
 vignette: >
   %\VignetteIndexEntry{BANDITS: Bayesian ANalysis of DIfferenTial Splicing}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
-  %\usepackage[utf8]{inputenc}
+---
+
 ---
 
 ```{r setup, echo=FALSE, results="hide"}
@@ -29,9 +37,12 @@ The method is embedded in a Bayesian hierarchical framework, where the posterior
 The allocation of each RNA-seq read to its transcript of origin is treated as a latent variable and also sampled in the MCMC.
 To test for DTU, we compare the average transcript relative abundance between two or more conditions.
 A statistical test is performed, both, at the gene and transcript level, allowing scientists to investigate what specific transcripts are differentially used in significant genes.
-*BANDITS* package version: `r packageVersion("BANDITS")`
+*BANDITS* package version: `r packageVersion("BANDITS")`.
 
-Use `browseVignettes("BANDITS")` to access the R code used in the vignettes.
+To access the R code used in the vignettes, use:
+```{r eval=FALSE} 
+browseVignettes("BANDITS")
+```
 
 Questions relative to *BANDITS* should be written to the *[Bioconductor support site](https://support.bioconductor.org)*, tagging the question with "BANDITS".
 
@@ -82,8 +93,8 @@ gene_tr_id_fasta = unique(gene_tr_id_fasta) # remove eventual duplicated rows
 
 # DTU pipeline
 
-Load the \Rpackage{BANDITS} package.
-```{r}
+Load *BANDITS*
+```{r, message=FALSE}
 library(BANDITS)
 ```
 
