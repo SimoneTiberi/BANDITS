@@ -1,3 +1,5 @@
+Meta
+doc
 *.o
 *.so
 *.bbl
@@ -9,5 +11,5 @@
 *.Rhistory
 *.Rproj
 vignettes/*
-!vignettes/BANDITS.Rnw
+!vignettes/BANDITS.Rmd
 !vignettes/References.bib
