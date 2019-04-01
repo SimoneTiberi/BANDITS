@@ -24,10 +24,10 @@
 #' data_dir
 #' 
 #' # load gene_to_transcript matching:
-#' data("GeneTr_id", package = "BANDITS")
-#' # GeneTr_id contains transcripts ids on the first column
+#' data("gene_tr_id", package = "BANDITS")
+#' # gene_tr_id contains transcripts ids on the first column
 #' # and the corresponding gene ids on the second column:
-#' head(GeneTr_id)
+#' head(gene_tr_id)
 #' 
 #' # Specify the directory of the transcript level estimated counts.
 #' sample_names = paste0("sample", seq_len(4))
@@ -44,12 +44,14 @@
 #' 
 #' ## Optional (recommended): transcript pre-filtering
 #' 
-#' transcripts_to_keep = filter_transcripts(gene_to_transcript = GeneTr_id,
-#'                                          transcript_counts = counts, min_transcript_proportion = 0.01,
-#'                                          min_transcript_counts = 10, min_gene_counts = 20)
+#' transcripts_to_keep = filter_transcripts(gene_to_transcript = gene_tr_id,
+#'                                          transcript_counts = counts,
+#'                                          min_transcript_proportion = 0.01,
+#'                                          min_transcript_counts = 10,
+#'                                          min_gene_counts = 20)
 #' head(transcripts_to_keep)
 #' 
-#' @author Simone Tiberi
+#' @author Simone Tiberi \email{simone.tiberi@uzh.ch}
 #'
 #' @seealso \code{\link{filter_genes}}, \code{\link{create_data}}, \code{\linkS4class{BANDITS_data}}
 #'
@@ -75,7 +77,7 @@ filter_transcripts = function(gene_to_transcript, transcript_counts,
   # Min 
   sel_transcripts_proportions = unlist( lapply(transcript_proportions, filter_tr_proportions_OneN, min_transcript_proportion = min_transcript_proportion) )
   sel_transcripts_totalCounts = rownames(transcript_counts)[ rowSums( transcript_counts) >= min_transcript_counts ]
-
+  
   All_sel_tr  = unique(sel_transcripts_proportions, sel_transcripts_totalCounts)
   sel_in_both = {All_sel_tr %in% sel_transcripts_proportions} & {All_sel_tr %in% sel_transcripts_totalCounts}
   

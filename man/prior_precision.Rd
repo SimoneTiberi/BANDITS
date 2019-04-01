@@ -44,10 +44,10 @@ data_dir = system.file("extdata", package = "BANDITS")
 data_dir
 
 # load gene_to_transcript matching:
-data("GeneTr_id", package = "BANDITS")
-# GeneTr_id contains transcripts ids on the first column
+data("gene_tr_id", package = "BANDITS")
+# gene_tr_id contains transcripts ids on the first column
 # and the corresponding gene ids on the second column:
-head(GeneTr_id)
+head(gene_tr_id)
 
 # Specify the directory of the transcript level estimated counts.
 sample_names = paste0("sample", seq_len(4))
@@ -68,10 +68,13 @@ head(counts)
 # if transcript pre-filtering is not performed, set \\code{min_transcript_proportion},
 # \\code{min_transcript_counts} and \\code{min_gene_counts} to 0.
 
-set.seed(61217)
-prec = prior_precision(gene_to_transcript = GeneTr_id, transcript_counts = counts,
-                       min_transcript_proportion = 0.01, min_transcript_counts = 10,
-                       min_gene_counts = 20, n_cores = 2)
+#set.seed(61217)
+#prec = prior_precision(gene_to_transcript = gene_tr_id, transcript_counts = counts,
+#                       min_transcript_proportion = 0.01, min_transcript_counts = 10,
+#                       min_gene_counts = 20, n_cores = 2)
+
+# load the pre-computes precision estimates:
+data(prec, package = "BANDITS")
 
 # Plot the histogram of the genewise log-precision estimates.
 # The black solid line represents the normally distributed prior distribution 

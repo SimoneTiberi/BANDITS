@@ -23,7 +23,7 @@ wald_DTU_test_MultiGroup = function(f, l, exon_id, N, R, burn_in, mean_log_preci
   
   # If I didn't return the output yet it means either: 1) p.val is NA (never so far) 2) p.val < threshold (0.1 by default)/
   chain_2 = MCMC_chain_MultiGroup(f = f, l = l, exon_id = exon_id, N = N, N_groups = N_groups, R = R, K = K, 
-                                burn_in = burn_in, mean_log_precision = mean_log_precision, sd_log_precision = sd_log_precision)
+                                  burn_in = burn_in, mean_log_precision = mean_log_precision, sd_log_precision = sd_log_precision)
   
   if(chain_2[[2]][1] == 0){ # IF the second chain didn't converge (3 times), return the result from the first one:
     return( list(p.vals = pvals_res, convergence = chain[[2]]) ) # return the convergence result too (to check they are all converged with reasonable burn-in).
@@ -42,7 +42,7 @@ wald_DTU_test_MultiGroup = function(f, l, exon_id, N, R, burn_in, mean_log_preci
 MCMC_chain_MultiGroup = function(f, l, exon_id, N, N_groups, R, K, burn_in, mean_log_precision, sd_log_precision,
                                  FIRST_chain = 1){
   J = ncol(exon_id);
-
+  
   N_tot = sum(N)
   cumulative = c(0,cumsum(N))
   splits = list()
@@ -94,7 +94,7 @@ MCMC_chain_MultiGroup = function(f, l, exon_id, N, N_groups, R, K, burn_in, mean
   # Compute the convergence diagnostic:
   seq. = round( seq.int(1, R, length.out = 10^4 ) ) # thin if R > 10^4 (by construction R >= 10^4)
   convergence = my_heidel.diag(res[[2]][seq.], R = length(seq.), by. = length(seq.)/10, pvalue = 0.01)
-
+  
   # output:
   # Stationarity test passed (1) or not (0);
   # start iteration (it'd be > burn_in);
@@ -150,7 +150,7 @@ pval_compute_MultiGroup = function(mcmc, K, N_groups){
       }
       CV     = cov(A-B)
       mode   = apply(A-B, 2, find.mode, adjust = 10)  
-
+      
       # Normal (classical Wald test)
       stat = t(mode) %*% ginv(CV, tol = 0) %*% mode
       p_value[g,k] = 1-pchisq(stat, df = p)

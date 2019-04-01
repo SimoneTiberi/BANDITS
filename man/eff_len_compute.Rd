@@ -39,5 +39,5 @@ eff_len = eff_len_compute(x_eff_len = txi$length)
 \code{\link{filter_transcripts}}, \code{\link{create_data}}
 }
 \author{
-Simone Tiberi
+Simone Tiberi \email{simone.tiberi@uzh.ch}
 }

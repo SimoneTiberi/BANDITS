@@ -25,10 +25,10 @@
 #' data_dir
 #' 
 #' # load gene_to_transcript matching:
-#' data("GeneTr_id", package = "BANDITS")
-#' # GeneTr_id contains transcripts ids on the first column
+#' data("gene_tr_id", package = "BANDITS")
+#' # gene_tr_id contains transcripts ids on the first column
 #' # and the corresponding gene ids on the second column:
-#' head(GeneTr_id)
+#' head(gene_tr_id)
 #' 
 #' # Specify the directory of the transcript level estimated counts.
 #' sample_names = paste0("sample", seq_len(4))
@@ -45,9 +45,11 @@
 #' 
 #' ## Optional (recommended): transcript pre-filtering
 #' 
-#' transcripts_to_keep = filter_transcripts(gene_to_transcript = GeneTr_id,
-#'                                          transcript_counts = counts, min_transcript_proportion = 0.01,
-#'                                          min_transcript_counts = 10, min_gene_counts = 20)
+#' transcripts_to_keep = filter_transcripts(gene_to_transcript = gene_tr_id,
+#'                                          transcript_counts = counts,
+#'                                          min_transcript_proportion = 0.01,
+#'                                          min_transcript_counts = 10,
+#'                                          min_gene_counts = 20)
 #' head(transcripts_to_keep)
 #' 
 #' 
@@ -62,12 +64,12 @@
 #' file.exists(equiv_classes_files)
 #' 
 #' # create data and filter internally lowly abundant transcripts:
-#' BANDITS_data = create_data(gene_to_transcript = GeneTr_id,
+#' BANDITS_data = create_data(gene_to_transcript = gene_tr_id,
 #'                            path_to_eq_classes = equiv_classes_files, eff_len = eff_len, 
 #'                            n_cores = 2,
 #'                            transcripts_to_keep = transcripts_to_keep)
 #' 
-#' @author Simone Tiberi
+#' @author Simone Tiberi \email{simone.tiberi@uzh.ch}
 #' 
 #' @seealso \code{\link{eff_len_compute}}, \code{\link{filter_transcripts}}, \code{\link{filter_genes}}, \code{\linkS4class{BANDITS_data}}
 #' 
@@ -78,7 +80,7 @@ create_data = function(gene_to_transcript,
                        transcripts_to_keep = NULL,
                        max_genes_per_group = 50){
   N = length(path_to_eq_classes)
-
+  
   if(max_genes_per_group > 100){
     message("'max_genes_per_group' can be at most 100")
     return(NULL)
@@ -86,14 +88,14 @@ create_data = function(gene_to_transcript,
   
   # From the truth table I take the Transcript_id and associated Gene_id.
   Gene_id = as.character(gene_to_transcript[,1]); Tr_id = as.character(gene_to_transcript[,2]) 
-
+  
   # MAKE SURE THAT "_" is not present in the list of transcript ids:
   # otherwise crease a longer list of "_".
   if(is.null(transcripts_to_keep)){
     sep = "_"
     while(TRUE){
       cond = sum( vapply(Tr_id, function(x){  grepl(sep, x, fixed=TRUE) }, FUN.VALUE = logical(1)) ) == 0
-        # sum(sapply(Tr_id, function(x){  grepl(sep, x, fixed=TRUE) })) == 0
+      # sum(sapply(Tr_id, function(x){  grepl(sep, x, fixed=TRUE) })) == 0
       if(cond){
         break
       }
@@ -103,7 +105,7 @@ create_data = function(gene_to_transcript,
     sep = "_"
     while(TRUE){
       cond = sum( vapply(transcripts_to_keep, function(x){  grepl(sep, x, fixed=TRUE) }, FUN.VALUE = logical(1)) ) == 0
-        # sum(sapply(transcripts_to_keep, function(x){  grepl(sep, x, fixed=TRUE) })) == 0
+      # sum(sapply(transcripts_to_keep, function(x){  grepl(sep, x, fixed=TRUE) })) == 0
       if(cond){
         break
       }
@@ -115,7 +117,7 @@ create_data = function(gene_to_transcript,
     suppressWarnings({
       cl = makeCluster(n_cores);
     })
-
+    
     if(is.null(transcripts_to_keep)){
       x = parLapply(cl = cl, X = path_to_eq_classes, fun = read_eq_classes, sep = sep)
     }else{ # if transcripts_to_keep have been specified, I filter them out from the equivalence classes:
@@ -140,7 +142,7 @@ create_data = function(gene_to_transcript,
   # I turn the transcript id from a single character into a vector
   all_classes_vector = vapply( all_classes, strsplit, split = sep, fixed = TRUE, FUN.VALUE = list(1) )
   # sapply( all_classes, strsplit, split = sep, fixed = TRUE )
-
+  
   # match the class id of each sample to the long vector containing all classes ids.
   match_classes = lapply(x, function(u) match(u$class_ids, all_classes) )
   # match_classes is a list, every element of the list refers to a sample.
@@ -167,7 +169,7 @@ create_data = function(gene_to_transcript,
   
   genes_in_classes = split(df_all_classes$Gene_id, df_all_classes$Class_id)
   genes_in_classes = lapply(genes_in_classes, unique)
-
+  
   ############################################################################################################################################################
   # 1) Consider ALL genes: first separate genes to be modelled alone from genes to be modelled together.
   ############################################################################################################################################################
@@ -276,14 +278,14 @@ create_data = function(gene_to_transcript,
   
   classes_split_per_gene_Together = split( all_classes_vector_Together,
                                            genes_in_classes_vector_Together )
-
+  
   counts_split_per_gene_Together =  split( data.frame(all_counts_Together),
-                                          genes_in_classes_vector_Together )
+                                           genes_in_classes_vector_Together )
   
   # I look for what classes each gene appers in and record whether it happears uniquely or not.
   genes_in_classes_split_per_gene_Together = strsplit(names(classes_split_per_gene_Together), split = sep, fixed = TRUE )
   n_genes = sapply(genes_in_classes_split_per_gene_Together, length)
- 
+  
   ######################################################################################################
   # I make group of genes to be modelled together and make a correspondance with the classes in classes_split_per_gene_Together
   ######################################################################################################
@@ -338,7 +340,7 @@ create_data = function(gene_to_transcript,
       counts_split_per_gene_Together =  split( data.frame(all_counts_Together),
                                                genes_in_classes_vector_Together )
       Gene   = unlist(genes_in_classes_split_per_gene_Together[classes_bigGroup])
-
+      
       classes_tmp = classes_split_per_gene_Together[classes_bigGroup]
       Ngenes = sapply(genes_in_classes_split_per_gene_Together[classes_bigGroup], length)
       Class  = rep(classes_tmp, Ngenes)
@@ -367,16 +369,16 @@ create_data = function(gene_to_transcript,
         lapply(X, function(y){ 
           y = unlist(y)
           y[y %in% Tr_perGene_bigGroup[[x]] ] 
-          })
+        })
       })
       ################################################################################################
       # Merge Identical classes and add up corresponding counts:
       ################################################################################################
       # put transcript names of classes together as tr1_tr2
       classes_split_bigGroup_num = lapply(classes_split_bigGroup, function(y){
-                                    as.numeric(factor (sapply(y, function(yy) paste(sort(yy), collapse=sep) )) ) 
-                                })
-
+        as.numeric(factor (sapply(y, function(yy) paste(sort(yy), collapse=sep) )) ) 
+      })
+      
       DUPS = lapply(classes_split_bigGroup_num,  duplicated)
       classes_split_bigGroup_Unique = lapply(seq_along(classes_split_bigGroup), function(id){
         classes_split_bigGroup[[id]][ DUPS[[id]] == FALSE ]
@@ -385,7 +387,7 @@ create_data = function(gene_to_transcript,
       classes_split_bigGroup_Unique_num = lapply(seq_along(classes_split_bigGroup_num), function(id){
         classes_split_bigGroup_num[[id]][ DUPS[[id]] == FALSE ]
       })
-
+      
       # Select the counts for the unique classes:
       counts_byGene_unique = lapply(seq_along(counts_byGene), function(id){
         counts_byGene[[id]][ DUPS[[id]] == FALSE, ]
@@ -393,7 +395,7 @@ create_data = function(gene_to_transcript,
       
       # Select the counts for the duplicated classes:
       counts_byGene_DUPS = lapply(seq_along(counts_byGene), function(id){
-          counts_byGene[[id]][ DUPS[[id]], ]
+        counts_byGene[[id]][ DUPS[[id]], ]
       })
       
       counts_byGene_final = lapply(seq_along(counts_byGene), function(id){
@@ -421,7 +423,7 @@ create_data = function(gene_to_transcript,
       })
       # TO DO: REMOVE CLASSES from transcripts which are not present!
       # AND merge classes which are identical.
-
+      
       ################################################################################################
       # Associate the Median eff length of transcripts:
       ################################################################################################
@@ -578,7 +580,7 @@ create_data = function(gene_to_transcript,
   # automatically check the coherence of the matrixed in TOGETHER:
   ######################################################################################################
   if(length(Transcripts_per_GROUP) > 0){
-      
+    
     cond = vapply(seq_along(Transcripts_per_GROUP), function(i){
       K = nrow(classes_Together[[i]]); J = ncol(classes_Together[[i]])
       
@@ -601,13 +603,13 @@ create_data = function(gene_to_transcript,
   message(paste("Max ", max( sapply(genes_per_GROUP_unique_together, length) ), " genes per group"))
   
   data = new("BANDITS_data",
-      genes       = c(genes_SELECTED_Unique,                 genes_per_GROUP_unique_together), 
-      transcripts = c(Transcripts_per_gene_Unique,           Transcripts_per_GROUP),
-      effLen      = c(eff_len_tr_Unique,                     eff_len_tr_Together),
-      classes     = c(classes_Unique,                        classes_Together),
-      counts      = c(counts_split_per_gene_Unique,          counts_ALL_together_per_GROUP), 
-      uniqueId    = c( rep(TRUE, length(eff_len_tr_Unique)), rep(FALSE, length(eff_len_tr_Together)) ),
-      all_genes   = all_genes )
+             genes       = c(genes_SELECTED_Unique,                 genes_per_GROUP_unique_together), 
+             transcripts = c(Transcripts_per_gene_Unique,           Transcripts_per_GROUP),
+             effLen      = c(eff_len_tr_Unique,                     eff_len_tr_Together),
+             classes     = c(classes_Unique,                        classes_Together),
+             counts      = c(counts_split_per_gene_Unique,          counts_ALL_together_per_GROUP), 
+             uniqueId    = c( rep(TRUE, length(eff_len_tr_Unique)), rep(FALSE, length(eff_len_tr_Together)) ),
+             all_genes   = all_genes )
   
   # return results into a BANDITS_data object:
   return(data)
@@ -624,7 +626,7 @@ read_eq_classes = function(fn, sep){
   trans = sapply(ecs.s, function(u) 1+as.integer(u[2:(length(u)-1)]))
   
   class_ids = vapply(trans, function(u) paste(sort(ids[unique(u)]),collapse=sep), FUN.VALUE = "id") # I create the id for the class, made of all transcripts of the class separated by _
-
+  
   # check if there are any duplicated classes:  
   if( sum(duplicated(class_ids)) > 0.5 ){ # use the other method, with transcripts_to_keep = all transcripts
     return( read_eq_classes_filteringTranscripts(fn = fn, transcripts_to_keep = unique(ids),  sep = sep) )
@@ -666,9 +668,9 @@ read_eq_classes_filteringTranscripts = function(fn, transcripts_to_keep, sep) {
   #############  #############  #############  #############  #############  #############
   # Now I filter out classes with NO transcripts (where all transcripts were filtered out):
   SEL_classes = {sapply(trans_sel, length) > 0} # if length == 0, I have 0 transcripts in a class
-
+  
   class_ids_sel = vapply(trans_sel[SEL_classes], function(u) paste(sort(ids[u]),collapse=sep), FUN.VALUE = "id") # I create the id for the class, made of all transcripts of the class separated by _
-
+  
   cnt_sel = cnt[SEL_classes]
   
   # do UNIQUE of classes:

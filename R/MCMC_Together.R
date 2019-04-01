@@ -15,7 +15,7 @@ wald_DTU_test_Together_FULL = function(f, l, exon_id, N_1, N_2, R, burn_in,
   
   # TRUE-FALSE matrix telling me what genes are associated to what transcripts!
   # gene_id[,i] refers to the i-th gene.
-
+  
   K = vapply(genes, function(x) sum(names(transcripts) == x), FUN.VALUE = integer(1))
   # sapply(genes, function(x) sum(names(transcripts) == x))
   

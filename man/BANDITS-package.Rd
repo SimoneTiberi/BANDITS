@@ -30,10 +30,10 @@ data_dir = system.file("extdata", package = "BANDITS")
 data_dir
 
 # load gene_to_transcript matching:
-data("GeneTr_id", package = "BANDITS")
-# GeneTr_id contains transcripts ids on the first column
+data("gene_tr_id", package = "BANDITS")
+# gene_tr_id contains transcripts ids on the first column
 # and the corresponding gene ids on the second column:
-head(GeneTr_id)
+head(gene_tr_id)
 
 # Specify the directory of the transcript level estimated counts.
 sample_names = paste0("sample", seq_len(4))
@@ -59,7 +59,7 @@ levels(samples_design$group)
 
 ## Optional (recommended): transcript pre-filtering
 
-transcripts_to_keep = filter_transcripts(gene_to_transcript = GeneTr_id,
+transcripts_to_keep = filter_transcripts(gene_to_transcript = gene_tr_id,
                                          transcript_counts = counts,
                                          min_transcript_proportion = 0.01,
                                          min_transcript_counts = 10,
@@ -83,7 +83,7 @@ equiv_classes_files
 samples_design$sample_id
 
 # create data and filter internally lowly abundant transcripts:
-BANDITS_data = create_data(gene_to_transcript = GeneTr_id,
+BANDITS_data = create_data(gene_to_transcript = gene_tr_id,
                            path_to_eq_classes = equiv_classes_files, eff_len = eff_len, 
                            n_cores = 2,
                            transcripts_to_keep = transcripts_to_keep)
@@ -102,10 +102,13 @@ BANDITS_data = filter_genes(BANDITS_data, min_counts_per_gene = 20)
 # if transcript pre-filtering is not performed, set \\code{min_transcript_proportion},
 # \\code{min_transcript_counts} and \\code{min_gene_counts} to 0.
 
-set.seed(61217)
-prec = prior_precision(gene_to_transcript = GeneTr_id, transcript_counts = counts,
-                       min_transcript_proportion = 0.01, min_transcript_counts = 10,
-                       min_gene_counts = 20, n_cores = 2)
+#set.seed(61217)
+#prec = prior_precision(gene_to_transcript = gene_tr_id, transcript_counts = counts,
+#                       min_transcript_proportion = 0.01, min_transcript_counts = 10,
+#                       min_gene_counts = 20, n_cores = 2)
+
+# load the pre-computes precision estimates:
+data(prec, package = "BANDITS")
 
 # Plot the histogram of the genewise log-precision estimates.
 # The black solid line represents the normally distributed prior distribution 
@@ -120,7 +123,7 @@ x = test_DTU(BANDITS_data = BANDITS_data,
              prior_precision = prec$prior,
              samples_design = samples_design,
              R = 10^4, burn_in = 2*10^3, n_cores = 2,
-             gene_to_transcript = GeneTr_id)
+             gene_to_transcript = gene_tr_id)
 x
 
 # Visualize the most significant Genes, sorted by gene level significance.

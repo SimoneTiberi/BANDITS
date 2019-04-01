@@ -13,18 +13,17 @@
 #' @return
 #' \itemize{
 #' \item \code{show(object)}: returns the \code{head} of the gene and transcript level results and of the convergence diagnostic.
-#' \item \code{top_genes(x, n = Inf,  sort_by = "p.value")}: returns the gene-level results of the DTU test for the top 'n' significant genes.
+#' \item \code{top_genes(x, n = Inf,  sort_by_g = "p.value")}: returns the gene-level results of the DTU test for the top 'n' significant genes.
 #' By default n = Inf and all results will be reported.
-#' sort_by = "gene" for sorting results according to gene-level significance; sort_by = "DTU_measure" for sorting results according to the 'DTU_measure'.
-#' \item \code{top_transcripts(x, n = Inf, sort_by = "gene")}: returns the transcript-level results of the DTU test for the top 'n' significant genes.
+#' sort_by_g = "gene" for sorting results according to gene-level significance; sort_by_g = "DTU_measure" for sorting results according to the 'DTU_measure'.
+#' \item \code{top_transcripts(x, n = Inf, sort_by_tr = "gene")}: returns the transcript-level results of the DTU test for the top 'n' significant genes.
 #' By default n = Inf and all results will be reported.
-#' sort_by = "gene" for sorting results according to gene-level significance; sort_by = "transcript" for sorting results according to transcript-level significance.
+#' sort_by_tr = "gene" for sorting results according to gene-level significance; sort_by_tr = "transcript" for sorting results according to transcript-level significance.
 #' \item \code{convergence(x)}: returns the convergence diagnostic of the posterior MCMC chains for every gene.
 #' \item \code{gene(x, gene_id)}: returns a list with all results for the gene(s) specified in 'gene_id': gene results, corresponding transcript results and convergence diagnostic.
 #' \item \code{transcript(x, transcript_id)}: returns a list with all results for the trancript specified in 'transcript_id': transcript results, corresponding gene results and convergence diagnostic.
-#' \item \code{plot_proportions(x, gene_id, group_names = NULL)}: plots the posterior means of the average transcripts
-#'  relative expression (i.e., the proportions) of each condition, for the gene specified in 'gene_id'.
-#'  group_names is a carachter vector with the same length as the number of groups; if not provided, the first letters of the alphabet are used.
+#' \item \code{plot_proportions(x, gene_id_plot)}: plots the posterior means of the average transcripts
+#'  relative expression (i.e., the proportions) of each condition, for the gene specified in 'gene_id_plot'.
 #' }
 #' 
 #' @slot Gene_results a \code{data.frame} containing the gene-level results of the DTU test, structured in the following columns:
@@ -68,10 +67,10 @@
 #' data_dir
 #' 
 #' # load gene_to_transcript matching:
-#' data("GeneTr_id", package = "BANDITS")
-#' # GeneTr_id contains transcripts ids on the first column
+#' data("gene_tr_id", package = "BANDITS")
+#' # gene_tr_id contains transcripts ids on the first column
 #' # and the corresponding gene ids on the second column:
-#' head(GeneTr_id)
+#' head(gene_tr_id)
 #' 
 #' # Specify the directory of the transcript level estimated counts.
 #' sample_names = paste0("sample", seq_len(4))
@@ -97,7 +96,7 @@
 #' 
 #' ## Optional (recommended): transcript pre-filtering
 #' 
-#' transcripts_to_keep = filter_transcripts(gene_to_transcript = GeneTr_id,
+#' transcripts_to_keep = filter_transcripts(gene_to_transcript = gene_tr_id,
 #'                                          transcript_counts = counts,
 #'                                          min_transcript_proportion = 0.01,
 #'                                          min_transcript_counts = 10,
@@ -121,7 +120,7 @@
 #' samples_design$sample_id
 #' 
 #' # create data and filter internally lowly abundant transcripts:
-#' BANDITS_data = create_data(gene_to_transcript = GeneTr_id,
+#' BANDITS_data = create_data(gene_to_transcript = gene_tr_id,
 #'                            path_to_eq_classes = equiv_classes_files, eff_len = eff_len, 
 #'                            n_cores = 2,
 #'                            transcripts_to_keep = transcripts_to_keep)
@@ -140,10 +139,13 @@
 #' # if transcript pre-filtering is not performed, set \code{min_transcript_proportion},
 #' # \code{min_transcript_counts} and \code{min_gene_counts} to 0.
 #' 
-#' set.seed(61217)
-#' prec = prior_precision(gene_to_transcript = GeneTr_id, transcript_counts = counts,
-#'                        min_transcript_proportion = 0.01, min_transcript_counts = 10,
-#'                        min_gene_counts = 20, n_cores = 2)
+#' #set.seed(61217)
+#' #prec = prior_precision(gene_to_transcript = gene_tr_id, transcript_counts = counts,
+#' #                       min_transcript_proportion = 0.01, min_transcript_counts = 10,
+#' #                       min_gene_counts = 20, n_cores = 2)
+#' 
+#' # load the pre-computes precision estimates:
+#' data(prec, package = "BANDITS")
 #' 
 #' # Plot the histogram of the genewise log-precision estimates.
 #' # The black solid line represents the normally distributed prior distribution 
@@ -158,7 +160,7 @@
 #'              prior_precision = prec$prior,
 #'              samples_design = samples_design,
 #'              R = 10^4, burn_in = 2*10^3, n_cores = 2,
-#'              gene_to_transcript = GeneTr_id)
+#'              gene_to_transcript = gene_tr_id)
 #' x
 #' 
 #' # Visualize the most significant Genes, sorted by gene level significance.
@@ -191,7 +193,7 @@
 #' library(ggplot2)
 #' plot_proportions(x, top_gene$Gene_id)
 #' 
-#' @author Simone Tiberi
+#' @author Simone Tiberi \email{simone.tiberi@uzh.ch}
 #'
 #' @seealso \code{\link{test_DTU}}, \code{\link{create_data}}, \code{\linkS4class{BANDITS_data}}
 #' 
@@ -200,33 +202,37 @@
 #' @export
 setClass("BANDITS_test", 
          slots = representation(Gene_results = "data.frame", Transcript_results = "data.frame", 
-                        Convergence = "data.frame", samples_design = "data.frame"))
+                                Convergence = "data.frame", samples_design = "data.frame"))
 
 #' @rdname BANDITS_test-class
+#' @param object,x a 'BANDITS_test' object.
 #' @export
-setMethod("length", "BANDITS_test", function(x){
-  nrow(x@Gene_results)
+setMethod("show", "BANDITS_test", function(object){
+  message(paste0("A 'BANDITS_test' object, with ", nrow(object@Gene_results), " genes and ", nrow(object@Transcript_results), " transcript level results."))
 })
 
 setGeneric("top_genes", function(x, ...) 
   standardGeneric("top_genes") )
 
 #' @rdname BANDITS_test-class
+#' @param n the number of genes or transcripts to report. By default \code{n = Inf} and all results will be reported.
+#' @param sort_by_g "gene" for sorting results according to gene-level significance;
+#' "DTU_measure" for sorting results according to the 'DTU_measure' (check the vignette for details).
 #' @export
-setMethod("top_genes", "BANDITS_test", function(x, n = Inf, sort_by = "p.value"){
-  if(!is.character(sort_by)){
-    message("'sort_by' must be a character string, indicating either 'p.value' or 'DTU_measure'")
+setMethod("top_genes", "BANDITS_test", function(x, n = Inf, sort_by_g = "p.value"){
+  if(!is.character(sort_by_g)){
+    message("'sort_by_g' must be a character string, indicating either 'p.value' or 'DTU_measure'")
     return(NULL)
   }
-  if(! sort_by %in% c("p.value", "DTU_measure")){
-    message("'sort_by' must be either 'p.value' or 'DTU_measure'")
+  if(! sort_by_g %in% c("p.value", "DTU_measure")){
+    message("'sort_by_g' must be either 'p.value' or 'DTU_measure'")
     return(NULL)
   }
   
   # take the min between the provided number and the size of the matrix:
   n = min(n, nrow(x@Gene_results) )
   
-  if(sort_by == "p.value"){ # transcript results sorted according to gene-level p.value
+  if(sort_by_g == "p.value"){ # transcript results sorted according to gene-level p.value
     return(x@Gene_results[seq_len(n),])
   }
   
@@ -242,21 +248,23 @@ setGeneric("top_transcripts", function(x, ...)
   standardGeneric("top_transcripts") )
 
 #' @rdname BANDITS_test-class
+#' @param sort_by_tr "gene" for sorting results according to gene-level significance;
+#' "transcript" for sorting results according to transcript-level significance.
 #' @export
-setMethod("top_transcripts", "BANDITS_test", function(x, n = Inf, sort_by="gene"){
-  if(!is.character(sort_by)){
-    message("'sort_by' must be a character string")
+setMethod("top_transcripts", "BANDITS_test", function(x, n = Inf, sort_by_tr="gene"){
+  if(!is.character(sort_by_tr)){
+    message("'sort_by_tr' must be a character string")
     return(NULL)
   }
-  if(! sort_by %in% c("gene", "transcript")){
-    message("'sort_by' must be either 'gene' or 'transcript'")
+  if(! sort_by_tr %in% c("gene", "transcript")){
+    message("'sort_by_tr' must be either 'gene' or 'transcript'")
     return(NULL)
   }
   
   # take the min between the provided number and the size of the matrix:
   n = min(n, nrow(x@Gene_results) )
   
-  if(sort_by == "gene"){ # transcript results sorted according to gene-level p.value
+  if(sort_by_tr == "gene"){ # transcript results sorted according to gene-level p.value
     return(x@Transcript_results[seq_len(n),])
   }
   # transcript results sorted according to transcript-level p.value
@@ -272,16 +280,11 @@ setMethod("convergence", "BANDITS_test", function(x){
   x@Convergence
 })
 
-#' @rdname BANDITS_test-class
-#' @export
-setMethod("show", "BANDITS_test", function(object){
-  message(paste0("A 'BANDITS_test' object, with ", nrow(object@Gene_results), " genes and ", nrow(object@Transcript_results), " transcript level results."))
-})
-
 setGeneric("gene", function(x, ...)
   standardGeneric("gene") )
 
 #' @rdname BANDITS_test-class
+#' @param gene_id a character string or vector indicating the gene or genes whose results should be retrieved.
 #' @export
 setMethod("gene", "BANDITS_test", function(x, gene_id){
   if(!is.character(gene_id)){
@@ -302,6 +305,7 @@ setGeneric("transcript", function(x, ...)
   standardGeneric("transcript") )
 
 #' @rdname BANDITS_test-class
+#' @param transcript_id a character string or vector indicating the transcript or transcripts whose results should be retrieved.
 #' @export
 setMethod("transcript", "BANDITS_test", function(x, transcript_id){
   if(!is.character(transcript_id)){
@@ -323,32 +327,38 @@ setGeneric("plot_proportions", function(x, ...)
   standardGeneric("plot_proportions") )
 
 #' @rdname BANDITS_test-class
+#' @param gene_id_plot a character string indicating the gene to plot.
 #' @export
-setMethod("plot_proportions", "BANDITS_test", function(x, gene_id){
-  if(!is.character(gene_id)){
-    gene_id = as.character(gene_id)
+setMethod("plot_proportions", "BANDITS_test", function(x, gene_id_plot){
+  if(!is.character(gene_id_plot)){
+    gene_id_plot = as.character(gene_id_plot)
   }
   
-  if( ! gene_id %in% as.character( x@Transcript_results$Gene_id ) ){
+  if( length(gene_id_plot) != 1){
+    message("'gene_id_plot' contains ", length(gene_id_plot), " values: one gene only can be specified.")
+    return(NULL)
+  }
+  
+  if( ! gene_id_plot %in% as.character( x@Transcript_results$Gene_id ) ){
     message("gene not found in results")
     return(NULL)
   }
   
   group_names = levels(x@samples_design$group)
   
-  sel = x@Transcript_results$Gene_id == gene_id
-
+  sel = x@Transcript_results$Gene_id == gene_id_plot
+  
   means = x@Transcript_results[sel, grep("Mean", names(x@Transcript_results))]
   n_groups = ncol(means)
   tr_names = x@Transcript_results$Transcript_id[sel]
   # impose an order to the transcripts (according to the over-all relative abudance):
   ord = order(rowSums(means), decreasing = TRUE)
-
+  
   prop_samp = data.frame(feature_id = factor( rep(tr_names,n_groups), levels = tr_names[ord]), 
                          proportion = unlist(c(means)),
                          group = rep(group_names, each = nrow(means)),
                          stringsAsFactors = FALSE)
-
+  
   # Plot the estimated average proportions of each groups:
   ggp <- ggplot() +
     geom_bar(data = prop_samp, aes_string(x = "feature_id", y = "proportion", 
@@ -362,7 +372,7 @@ setMethod("plot_proportions", "BANDITS_test", function(x, gene_id){
           legend.position = "right", 
           legend.title = element_text(size = 14), 
           legend.text = element_text(size = 14)) +
-    ggtitle(paste("Gene:", gene_id, sep=" ")) +
+    ggtitle(paste("Gene:", gene_id_plot, sep=" ")) +
     xlab("Features") +
     ylab("Proportions")
   

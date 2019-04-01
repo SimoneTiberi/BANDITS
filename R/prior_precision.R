@@ -28,10 +28,10 @@
 #' data_dir
 #' 
 #' # load gene_to_transcript matching:
-#' data("GeneTr_id", package = "BANDITS")
-#' # GeneTr_id contains transcripts ids on the first column
+#' data("gene_tr_id", package = "BANDITS")
+#' # gene_tr_id contains transcripts ids on the first column
 #' # and the corresponding gene ids on the second column:
-#' head(GeneTr_id)
+#' head(gene_tr_id)
 #' 
 #' # Specify the directory of the transcript level estimated counts.
 #' sample_names = paste0("sample", seq_len(4))
@@ -52,10 +52,13 @@
 #' # if transcript pre-filtering is not performed, set \code{min_transcript_proportion},
 #' # \code{min_transcript_counts} and \code{min_gene_counts} to 0.
 #' 
-#' set.seed(61217)
-#' prec = prior_precision(gene_to_transcript = GeneTr_id, transcript_counts = counts,
-#'                        min_transcript_proportion = 0.01, min_transcript_counts = 10,
-#'                        min_gene_counts = 20, n_cores = 2)
+#' #set.seed(61217)
+#' #prec = prior_precision(gene_to_transcript = gene_tr_id, transcript_counts = counts,
+#' #                       min_transcript_proportion = 0.01, min_transcript_counts = 10,
+#' #                       min_gene_counts = 20, n_cores = 2)
+#' 
+#' # load the pre-computes precision estimates:
+#' data(prec, package = "BANDITS")
 #' 
 #' # Plot the histogram of the genewise log-precision estimates.
 #' # The black solid line represents the normally distributed prior distribution 
@@ -77,22 +80,22 @@ prior_precision = function(gene_to_transcript, transcript_counts,
   
   colnames(transcript_counts) = paste("sample", seq_len(N))
   counts_df = data.frame(transcript_counts, gene_id = gene_id, feature_id = rownames(transcript_counts))
-
+  
   # maybe design and samples not needed for precision estimate...check the function internally!
   samples = data.frame(sample_id = colnames(counts_df)[seq_len(N)],
                        group = "A")
-
+  
   d = dmDSdata(counts = counts_df, samples = samples)
   
   d = dmFilter(d, min_gene_expr = min_gene_counts, min_feature_expr = min_transcript_counts,
-                 min_feature_prop = min_transcript_proportion)
+               min_feature_prop = min_transcript_proportion)
   
   design = model.matrix(~ 1, data = samples(d))
   
   message("Estimating gene-wise precision parameters")
   suppressMessages({
     d = dmPrecision(d, genewise_precision = TRUE, 
-                  design = design, BPPARAM = MulticoreParam(workers = n_cores))
+                    design = design, BPPARAM = MulticoreParam(workers = n_cores))
   })
   message("Estimation completed")
   
@@ -106,11 +109,11 @@ prior_precision = function(gene_to_transcript, transcript_counts,
 
 #' Plot the log-precision estimates
 #'
-#' \code{plot_precision} plots a histogram of the estimates for the log-precision parameter 
+#' \code{\link{{plot_precision}} plots a histogram of the estimates for the log-precision parameter 
 #' of the Dirichlet-Multinomial distribution, obtained via \code{\link{prior_precision}}.
 #' The solid line represents the normal prior for the log-precision parameter.
 #' 
-#' @param prior, computed via \code{\link{prior_precision}}.
+#' @param prior the prior of the log-precision parameter, computed via \code{\link{prior_precision}}.
 #' 
 #' @return A plot.
 #' 
@@ -122,10 +125,10 @@ prior_precision = function(gene_to_transcript, transcript_counts,
 #' data_dir
 #' 
 #' # load gene_to_transcript matching:
-#' data("GeneTr_id", package = "BANDITS")
-#' # GeneTr_id contains transcripts ids on the first column
+#' data("gene_tr_id", package = "BANDITS")
+#' # gene_tr_id contains transcripts ids on the first column
 #' # and the corresponding gene ids on the second column:
-#' head(GeneTr_id)
+#' head(gene_tr_id)
 #' 
 #' # Specify the directory of the transcript level estimated counts.
 #' sample_names = paste0("sample", seq_len(4))
@@ -146,17 +149,20 @@ prior_precision = function(gene_to_transcript, transcript_counts,
 #' # if transcript pre-filtering is not performed, set \code{min_transcript_proportion},
 #' # \code{min_transcript_counts} and \code{min_gene_counts} to 0.
 #' 
-#' set.seed(61217)
-#' prec = prior_precision(gene_to_transcript = GeneTr_id, transcript_counts = counts,
-#'                        min_transcript_proportion = 0.01, min_transcript_counts = 10,
-#'                        min_gene_counts = 20, n_cores = 2)
+#' #set.seed(61217)
+#' #prec = prior_precision(gene_to_transcript = gene_tr_id, transcript_counts = counts,
+#' #                       min_transcript_proportion = 0.01, min_transcript_counts = 10,
+#' #                       min_gene_counts = 20, n_cores = 2)
+#' 
+#' # load the pre-computes precision estimates:
+#' data(prec, package = "BANDITS")
 #' 
 #' # Plot the histogram of the genewise log-precision estimates.
 #' # The black solid line represents the normally distributed prior distribution 
 #' # for the log-precision parameter.
 #' plot_precision(prec)
 #' 
-#' @author Simone Tiberi
+#' @author Simone Tiberi \email{simone.tiberi@uzh.ch}
 #' 
 #' @seealso \code{\link{test_DTU}}, \code{\link{prior_precision}}
 #' 

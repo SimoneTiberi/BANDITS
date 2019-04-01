@@ -1,5 +1,5 @@
 wald_DTU_test_MultiGroup_Together = function(f, l, exon_id, N, R, burn_in, mean_log_precision, sd_log_precision,
-                                    genes, transcripts, theshold_pval = 0.1){
+                                             genes, transcripts, theshold_pval = 0.1){
   N_groups = length(N)
   n_genes = length(genes)
   
@@ -18,7 +18,7 @@ wald_DTU_test_MultiGroup_Together = function(f, l, exon_id, N, R, burn_in, mean_
   # gene_id[,i] refers to the i-th gene.
   K = vapply(genes, function(x) sum(names(transcripts) == x), FUN.VALUE = integer(1))
   # sapply(genes, function(x) sum(names(transcripts) == x))
-
+  
   ### ### ### if K == 1, do not provide a p.value, set pi = 1 in the function above!!!
   if( all(K == 1) ){
     return( NULL ) # if all genes have 1 transcript only, I cannot infer any DTU genes so I return all -1's
@@ -26,7 +26,7 @@ wald_DTU_test_MultiGroup_Together = function(f, l, exon_id, N, R, burn_in, mean_
   
   chain = MCMC_chain_MultiGroup_Together(f = f, l = l, exon_id = exon_id, N = N, N_groups = N_groups,
                                          n_genes = n_genes, R = R, K = K, gene_id = gene_id,
-                                burn_in = burn_in, mean_log_precision = mean_log_precision, sd_log_precision = sd_log_precision)
+                                         burn_in = burn_in, mean_log_precision = mean_log_precision, sd_log_precision = sd_log_precision)
   
   if(chain[[2]][1] == 0){ # IF the chain didn't converge (3 times), return NULL result:
     rownames(res_gene) = genes
@@ -37,7 +37,7 @@ wald_DTU_test_MultiGroup_Together = function(f, l, exon_id, N, R, burn_in, mean_
   }
   
   pvals_res = pval_compute_Together_MultiGroup(chain[[1]], K = K, n_genes = n_genes, genes = genes, N_groups = N_groups, gene_id = gene_id, transcripts = transcripts)
-
+  
   if( any(is.na(pvals_res[[1]])) == FALSE){
     if( all( pvals_res[[1]][K>1] > theshold_pval ) ){
       # if all genes tested (with at least 2 transcripts) have a p.val[55] > 0.1 I return the p.vals
@@ -48,13 +48,13 @@ wald_DTU_test_MultiGroup_Together = function(f, l, exon_id, N, R, burn_in, mean_
   # If I didn't return the output yet it means either: 1) p.val is NA (never so far) 2) p.val < threshold (0.1 by default)/
   chain_2 = MCMC_chain_MultiGroup_Together(f = f, l = l, exon_id = exon_id, N = N, N_groups = N_groups, 
                                            n_genes = n_genes, R = R, K = K, gene_id = gene_id,
-                                         burn_in = burn_in, mean_log_precision = mean_log_precision, sd_log_precision = sd_log_precision)
+                                           burn_in = burn_in, mean_log_precision = mean_log_precision, sd_log_precision = sd_log_precision)
   
   # if chain_2 converged, I add it to the first one, otherwise I don't:
   if(chain_2[[2]][1] == 0){ # IF the second chain didn't converge (three times), return the result from the first one:
     return( list(p.vals = pvals_res, convergence = chain[[2]]) ) # return the convergence result too (to check they are all converged with reasonable burn-in).
   }
-
+  
   for(g in seq_len(n_genes) ){
     for(n in seq_len(N_groups) ){
       if(K[g] > 1){
@@ -70,7 +70,7 @@ wald_DTU_test_MultiGroup_Together = function(f, l, exon_id, N, R, burn_in, mean_
 }
 
 MCMC_chain_MultiGroup_Together = function(f, l, exon_id, N, N_groups, n_genes, R, K, gene_id,burn_in, mean_log_precision, sd_log_precision,
-                                 FIRST_chain = 1){
+                                          FIRST_chain = 1){
   One_transcript = K ==1
   J = ncol(exon_id);
   
@@ -149,9 +149,9 @@ MCMC_chain_MultiGroup_Together = function(f, l, exon_id, N, N_groups, n_genes, R
   
   # Run the MCMC fully in Rcpp:
   res = .Call(`_BANDITS_Rcpp_FULL_Together_Multigroup`, R + burn_in, burn_in, N, N_groups,
-                mean_log_precision, sd_log_precision, 
-                pi_new, mcmc_alpha, alpha_new, chol_mat, TOT_Y_new, 
-                K, l, f_list, exon_id, One_transcript, one_transcript)
+              mean_log_precision, sd_log_precision, 
+              pi_new, mcmc_alpha, alpha_new, chol_mat, TOT_Y_new, 
+              K, l, f_list, exon_id, One_transcript, one_transcript)
   
   # Compute the convergence diagnostic:
   seq. = round( seq.int(1, R, length.out = 10^4 ) ) # thin if R > 10^4 (by construction R >= 10^4)

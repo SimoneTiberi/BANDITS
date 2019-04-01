@@ -3,55 +3,69 @@
 \docType{class}
 \name{BANDITS_test-class}
 \alias{BANDITS_test-class}
-\alias{BANDITS_test,}
-\alias{length,}
-\alias{top_genes,}
-\alias{top_transcripts,}
-\alias{convergence,}
-\alias{gene,}
-\alias{transcript,}
+\alias{BANDITS_test}
+\alias{length}
+\alias{top_genes}
+\alias{top_transcripts}
+\alias{convergence}
+\alias{gene}
+\alias{transcript}
 \alias{plot_proportions}
-\alias{length,BANDITS_test-method}
+\alias{show,BANDITS_test-method}
 \alias{top_genes,BANDITS_test-method}
 \alias{top_transcripts,BANDITS_test-method}
 \alias{convergence,BANDITS_test-method}
-\alias{show,BANDITS_test-method}
 \alias{gene,BANDITS_test-method}
 \alias{transcript,BANDITS_test-method}
 \alias{plot_proportions,BANDITS_test-method}
 \title{BANDITS_test class}
 \usage{
-\S4method{length}{BANDITS_test}(x)
+\S4method{show}{BANDITS_test}(object)
 
-\S4method{top_genes}{BANDITS_test}(x, n = Inf, sort_by = "p.value")
+\S4method{top_genes}{BANDITS_test}(x, n = Inf, sort_by_g = "p.value")
 
-\S4method{top_transcripts}{BANDITS_test}(x, n = Inf, sort_by = "gene")
+\S4method{top_transcripts}{BANDITS_test}(x, n = Inf,
+  sort_by_tr = "gene")
 
 \S4method{convergence}{BANDITS_test}(x)
-
-\S4method{show}{BANDITS_test}(object)
 
 \S4method{gene}{BANDITS_test}(x, gene_id)
 
 \S4method{transcript}{BANDITS_test}(x, transcript_id)
 
-\S4method{plot_proportions}{BANDITS_test}(x, gene_id)
+\S4method{plot_proportions}{BANDITS_test}(x, gene_id_plot)
+}
+\arguments{
+\item{object, x}{a 'BANDITS_test' object.}
+
+\item{n}{the number of genes or transcripts to report. By default \code{n = Inf} and all results will be reported.}
+
+\item{sort_by_g}{"gene" for sorting results according to gene-level significance;
+"DTU_measure" for sorting results according to the 'DTU_measure' (check the vignette for details).}
+
+\item{sort_by_tr}{"gene" for sorting results according to gene-level significance;
+"transcript" for sorting results according to transcript-level significance.}
+
+\item{gene_id}{a character string or vector indicating the gene or genes whose results should be retrieved.}
+
+\item{transcript_id}{a character string or vector indicating the transcript or transcripts whose results should be retrieved.}
+
+\item{gene_id_plot}{a character string indicating the gene to plot.}
 }
 \value{
 \itemize{
 \item \code{show(object)}: returns the \code{head} of the gene and transcript level results and of the convergence diagnostic.
-\item \code{top_genes(x, n = Inf,  sort_by = "p.value")}: returns the gene-level results of the DTU test for the top 'n' significant genes.
+\item \code{top_genes(x, n = Inf,  sort_by_g = "p.value")}: returns the gene-level results of the DTU test for the top 'n' significant genes.
 By default n = Inf and all results will be reported.
-sort_by = "gene" for sorting results according to gene-level significance; sort_by = "DTU_measure" for sorting results according to the 'DTU_measure'.
-\item \code{top_transcripts(x, n = Inf, sort_by = "gene")}: returns the transcript-level results of the DTU test for the top 'n' significant genes.
+sort_by_g = "gene" for sorting results according to gene-level significance; sort_by_g = "DTU_measure" for sorting results according to the 'DTU_measure'.
+\item \code{top_transcripts(x, n = Inf, sort_by_tr = "gene")}: returns the transcript-level results of the DTU test for the top 'n' significant genes.
 By default n = Inf and all results will be reported.
-sort_by = "gene" for sorting results according to gene-level significance; sort_by = "transcript" for sorting results according to transcript-level significance.
+sort_by_tr = "gene" for sorting results according to gene-level significance; sort_by_tr = "transcript" for sorting results according to transcript-level significance.
 \item \code{convergence(x)}: returns the convergence diagnostic of the posterior MCMC chains for every gene.
 \item \code{gene(x, gene_id)}: returns a list with all results for the gene(s) specified in 'gene_id': gene results, corresponding transcript results and convergence diagnostic.
 \item \code{transcript(x, transcript_id)}: returns a list with all results for the trancript specified in 'transcript_id': transcript results, corresponding gene results and convergence diagnostic.
-\item \code{plot_proportions(x, gene_id, group_names = NULL)}: plots the posterior means of the average transcripts
- relative expression (i.e., the proportions) of each condition, for the gene specified in 'gene_id'.
- group_names is a carachter vector with the same length as the number of groups; if not provided, the first letters of the alphabet are used.
+\item \code{plot_proportions(x, gene_id_plot)}: plots the posterior means of the average transcripts
+ relative expression (i.e., the proportions) of each condition, for the gene specified in 'gene_id_plot'.
 }
 }
 \description{
@@ -110,10 +124,10 @@ data_dir = system.file("extdata", package = "BANDITS")
 data_dir
 
 # load gene_to_transcript matching:
-data("GeneTr_id", package = "BANDITS")
-# GeneTr_id contains transcripts ids on the first column
+data("gene_tr_id", package = "BANDITS")
+# gene_tr_id contains transcripts ids on the first column
 # and the corresponding gene ids on the second column:
-head(GeneTr_id)
+head(gene_tr_id)
 
 # Specify the directory of the transcript level estimated counts.
 sample_names = paste0("sample", seq_len(4))
@@ -139,7 +153,7 @@ levels(samples_design$group)
 
 ## Optional (recommended): transcript pre-filtering
 
-transcripts_to_keep = filter_transcripts(gene_to_transcript = GeneTr_id,
+transcripts_to_keep = filter_transcripts(gene_to_transcript = gene_tr_id,
                                          transcript_counts = counts,
                                          min_transcript_proportion = 0.01,
                                          min_transcript_counts = 10,
@@ -163,7 +177,7 @@ equiv_classes_files
 samples_design$sample_id
 
 # create data and filter internally lowly abundant transcripts:
-BANDITS_data = create_data(gene_to_transcript = GeneTr_id,
+BANDITS_data = create_data(gene_to_transcript = gene_tr_id,
                            path_to_eq_classes = equiv_classes_files, eff_len = eff_len, 
                            n_cores = 2,
                            transcripts_to_keep = transcripts_to_keep)
@@ -172,7 +186,7 @@ BANDITS_data = create_data(gene_to_transcript = GeneTr_id,
 # do not specify \\code{transcripts_to_keep} parameter.
 
 # Filter lowly abundant genes:
-BANDITS_data = filter_genes(BANDITS_data, min_counts_per_Gene = 20)
+BANDITS_data = filter_genes(BANDITS_data, min_counts_per_gene = 20)
 
 
 
@@ -182,10 +196,13 @@ BANDITS_data = filter_genes(BANDITS_data, min_counts_per_Gene = 20)
 # if transcript pre-filtering is not performed, set \\code{min_transcript_proportion},
 # \\code{min_transcript_counts} and \\code{min_gene_counts} to 0.
 
-set.seed(61217)
-prec = prior_precision(gene_to_transcript = GeneTr_id, transcript_counts = counts,
-                       min_transcript_proportion = 0.01, min_transcript_counts = 10,
-                       min_gene_counts = 20, n_cores = 2)
+#set.seed(61217)
+#prec = prior_precision(gene_to_transcript = gene_tr_id, transcript_counts = counts,
+#                       min_transcript_proportion = 0.01, min_transcript_counts = 10,
+#                       min_gene_counts = 20, n_cores = 2)
+
+# load the pre-computes precision estimates:
+data(prec, package = "BANDITS")
 
 # Plot the histogram of the genewise log-precision estimates.
 # The black solid line represents the normally distributed prior distribution 
@@ -200,7 +217,7 @@ x = test_DTU(BANDITS_data = BANDITS_data,
              prior_precision = prec$prior,
              samples_design = samples_design,
              R = 10^4, burn_in = 2*10^3, n_cores = 2,
-             gene_to_transcript = GeneTr_id)
+             gene_to_transcript = gene_tr_id)
 x
 
 # Visualize the most significant Genes, sorted by gene level significance.
@@ -238,5 +255,5 @@ plot_proportions(x, top_gene$Gene_id)
 \code{\link{test_DTU}}, \code{\link{create_data}}, \code{\linkS4class{BANDITS_data}}
 }
 \author{
-Simone Tiberi
+Simone Tiberi \email{simone.tiberi@uzh.ch}
 }

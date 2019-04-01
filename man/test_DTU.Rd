@@ -5,8 +5,8 @@
 \title{Perform differential splicing}
 \usage{
 test_DTU(BANDITS_data, prior_precision = NULL, R = 10^4, burn_in = 2
-  * 10^3, samples_design, n_cores = 1, gene_to_transcript,
-  theshold_pval = 0.1)
+  * 10^3, samples_design, group_col_name = "group", n_cores = 1,
+  gene_to_transcript, theshold_pval = 0.1)
 }
 \arguments{
 \item{BANDITS_data}{a 'BANDITS_data' object.}
@@ -23,8 +23,13 @@ Min 2*10^3.
 Albeit no difference was observed in simulation studies when increasing 'burn_in' above 2*10^3, 
 we encourage users to possibly use higher values of R (e.g., double) if the computational time allows it.}
 
-\item{samples_design}{a \code{data.frame} indicating the design of the experiment with one row for each sample
-and two columns with names 'sample_id' and 'group', specifying the id and group of each sample, respectively.}
+\item{samples_design}{a \code{data.frame} indicating the design of the experiment with one row for each sample:
+samples_design must contain a column with the sample id and one with the group id.
+Warning: the samples in samples_design must have the same order
+as those in the 'path_to_eq_classes' parameter of the \code{\link{create_data}} function.}
+
+\item{group_col_name}{the name of the column of 'samples_design' containing the group id.
+By default group_col_name = "group".}
 
 \item{n_cores}{the number of cores to parallelize the tasks on.}
 
@@ -42,6 +47,8 @@ A \code{\linkS4class{BANDITS_test}} object.
 \code{test_DTU} performs differential splicing, via differential transcript usage (DTU), between 2 or more groups.
 Parameters are inferred via Markov chain Monte Carlo (MCMC) techniques and a DTU test is performed 
 via a multivariate Wald test on the posterior densities for the average relative abundance of transcripts.
+Warning: the samples in samples_design must have the same order
+as those in the 'path_to_eq_classes' parameter of the \code{\link{create_data}} function.
 }
 \examples{
 ## Preliminary information
@@ -51,10 +58,10 @@ data_dir = system.file("extdata", package = "BANDITS")
 data_dir
 
 # load gene_to_transcript matching:
-data("GeneTr_id", package = "BANDITS")
-# GeneTr_id contains transcripts ids on the first column
+data("gene_tr_id", package = "BANDITS")
+# gene_tr_id contains transcripts ids on the first column
 # and the corresponding gene ids on the second column:
-head(GeneTr_id)
+head(gene_tr_id)
 
 # Specify the directory of the transcript level estimated counts.
 sample_names = paste0("sample", seq_len(4))
@@ -80,7 +87,7 @@ levels(samples_design$group)
 
 ## Optional (recommended): transcript pre-filtering
 
-transcripts_to_keep = filter_transcripts(gene_to_transcript = GeneTr_id,
+transcripts_to_keep = filter_transcripts(gene_to_transcript = gene_tr_id,
                                          transcript_counts = counts,
                                          min_transcript_proportion = 0.01,
                                          min_transcript_counts = 10,
@@ -104,7 +111,7 @@ equiv_classes_files
 samples_design$sample_id
 
 # create data and filter internally lowly abundant transcripts:
-BANDITS_data = create_data(gene_to_transcript = GeneTr_id,
+BANDITS_data = create_data(gene_to_transcript = gene_tr_id,
                            path_to_eq_classes = equiv_classes_files, eff_len = eff_len, 
                            n_cores = 2,
                            transcripts_to_keep = transcripts_to_keep)
@@ -113,7 +120,7 @@ BANDITS_data = create_data(gene_to_transcript = GeneTr_id,
 # do not specify \\code{transcripts_to_keep} parameter.
 
 # Filter lowly abundant genes:
-BANDITS_data = filter_genes(BANDITS_data, min_counts_per_Gene = 20)
+BANDITS_data = filter_genes(BANDITS_data, min_counts_per_gene = 20)
 
 
 
@@ -123,10 +130,13 @@ BANDITS_data = filter_genes(BANDITS_data, min_counts_per_Gene = 20)
 # if transcript pre-filtering is not performed, set \\code{min_transcript_proportion},
 # \\code{min_transcript_counts} and \\code{min_gene_counts} to 0.
 
-set.seed(61217)
-prec = prior_precision(gene_to_transcript = GeneTr_id, transcript_counts = counts,
-                       min_transcript_proportion = 0.01, min_transcript_counts = 10,
-                       min_gene_counts = 20, n_cores = 2)
+#set.seed(61217)
+#prec = prior_precision(gene_to_transcript = gene_tr_id, transcript_counts = counts,
+#                       min_transcript_proportion = 0.01, min_transcript_counts = 10,
+#                       min_gene_counts = 20, n_cores = 2)
+
+# load the pre-computes precision estimates:
+data(prec, package = "BANDITS")
 
 # Plot the histogram of the genewise log-precision estimates.
 # The black solid line represents the normally distributed prior distribution 
@@ -141,7 +151,7 @@ x = test_DTU(BANDITS_data = BANDITS_data,
              prior_precision = prec$prior,
              samples_design = samples_design,
              R = 10^4, burn_in = 2*10^3, n_cores = 2,
-             gene_to_transcript = GeneTr_id)
+             gene_to_transcript = gene_tr_id)
 x
 
 # Visualize the most significant Genes, sorted by gene level significance.
@@ -179,5 +189,5 @@ plot_proportions(x, top_gene$Gene_id)
 \code{\link{create_data}}, \code{\linkS4class{BANDITS_data}}, \code{\linkS4class{BANDITS_test}}
 }
 \author{
-Simone Tiberi
+Simone Tiberi \email{simone.tiberi@uzh.ch}
 }

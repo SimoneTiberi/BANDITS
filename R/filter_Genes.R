@@ -18,10 +18,10 @@
 #' data_dir
 #' 
 #' # load gene_to_transcript matching:
-#' data("GeneTr_id", package = "BANDITS")
-#' # GeneTr_id contains transcripts ids on the first column
+#' data("gene_tr_id", package = "BANDITS")
+#' # gene_tr_id contains transcripts ids on the first column
 #' # and the corresponding gene ids on the second column:
-#' head(GeneTr_id)
+#' head(gene_tr_id)
 #' 
 #' # Specify the directory of the transcript level estimated counts.
 #' sample_names = paste0("sample", seq_len(4))
@@ -38,9 +38,11 @@
 #' 
 #' ## Optional (recommended): transcript pre-filtering
 #' 
-#' transcripts_to_keep = filter_transcripts(gene_to_transcript = GeneTr_id,
-#'                                          transcript_counts = counts, min_transcript_proportion = 0.01,
-#'                                          min_transcript_counts = 10, min_gene_counts = 20)
+#' transcripts_to_keep = filter_transcripts(gene_to_transcript = gene_tr_id,
+#'                                          transcript_counts = counts,
+#'                                          min_transcript_proportion = 0.01,
+#'                                          min_transcript_counts = 10,
+#'                                          min_gene_counts = 20)
 #' head(transcripts_to_keep)
 #' 
 #' 
@@ -55,7 +57,7 @@
 #' file.exists(equiv_classes_files)
 #' 
 #' # create data and filter internally lowly abundant transcripts:
-#' BANDITS_data = create_data(gene_to_transcript = GeneTr_id,
+#' BANDITS_data = create_data(gene_to_transcript = gene_tr_id,
 #'                            path_to_eq_classes = equiv_classes_files, eff_len = eff_len, 
 #'                            n_cores = 2,
 #'                            transcripts_to_keep = transcripts_to_keep)
@@ -63,7 +65,7 @@
 #' # Filter lowly abundant genes:
 #' BANDITS_data = filter_genes(BANDITS_data, min_counts_per_gene = 20)
 #' 
-#' @author Simone Tiberi
+#' @author Simone Tiberi \email{simone.tiberi@uzh.ch}
 #'  
 #' @seealso \code{\link{filter_transcripts}}, \code{\link{create_data}}, \code{\linkS4class{BANDITS_data}}
 #' 
@@ -75,7 +77,7 @@ filter_genes  = function(data, min_counts_per_gene = 10){
   SEL = tot_counts >= min_counts_per_gene
   
   n_initial = length(data@all_genes) # only genes with > 1 transcript can be analyzed for DTU
-
+  
   # filter genes/groups from data:
   if(mean(SEL) < 1){ # if mean(SEL) == 1, no genes/groups were filtered.
     data@genes       = data@genes[SEL]

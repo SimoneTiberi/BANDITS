@@ -7,15 +7,13 @@
 plot_precision(prior)
 }
 \arguments{
-\item{prior, }{computed via \code{\link{prior_precision}}.}
+\item{prior}{the prior of the log-precision parameter, computed via \code{\link{prior_precision}}.}
 }
 \value{
 A plot.
 }
 \description{
-\code{plot_precision} plots a histogram of the estimates for the log-precision parameter 
-of the Dirichlet-Multinomial distribution, obtained via \code{\link{prior_precision}}.
-The solid line represents the normal prior for the log-precision parameter.
+Plot the log-precision estimates
 }
 \examples{
 ## Preliminary information
@@ -25,10 +23,10 @@ data_dir = system.file("extdata", package = "BANDITS")
 data_dir
 
 # load gene_to_transcript matching:
-data("GeneTr_id", package = "BANDITS")
-# GeneTr_id contains transcripts ids on the first column
+data("gene_tr_id", package = "BANDITS")
+# gene_tr_id contains transcripts ids on the first column
 # and the corresponding gene ids on the second column:
-head(GeneTr_id)
+head(gene_tr_id)
 
 # Specify the directory of the transcript level estimated counts.
 sample_names = paste0("sample", seq_len(4))
@@ -49,10 +47,13 @@ head(counts)
 # if transcript pre-filtering is not performed, set \\code{min_transcript_proportion},
 # \\code{min_transcript_counts} and \\code{min_gene_counts} to 0.
 
-set.seed(61217)
-prec = prior_precision(gene_to_transcript = GeneTr_id, transcript_counts = counts,
-                       min_transcript_proportion = 0.01, min_transcript_counts = 10,
-                       min_gene_counts = 20, n_cores = 2)
+#set.seed(61217)
+#prec = prior_precision(gene_to_transcript = gene_tr_id, transcript_counts = counts,
+#                       min_transcript_proportion = 0.01, min_transcript_counts = 10,
+#                       min_gene_counts = 20, n_cores = 2)
+
+# load the pre-computes precision estimates:
+data(prec, package = "BANDITS")
 
 # Plot the histogram of the genewise log-precision estimates.
 # The black solid line represents the normally distributed prior distribution 
@@ -64,5 +65,5 @@ plot_precision(prec)
 \code{\link{test_DTU}}, \code{\link{prior_precision}}
 }
 \author{
-Simone Tiberi
+Simone Tiberi \email{simone.tiberi@uzh.ch}
 }

@@ -24,15 +24,15 @@
 #' # compute the Median estimated effective length for each transcript:
 #' eff_len = eff_len_compute(x_eff_len = txi$length)
 #' 
-#' @author Simone Tiberi
+#' @author Simone Tiberi \email{simone.tiberi@uzh.ch}
 #'  
 #' @seealso \code{\link{filter_transcripts}}, \code{\link{create_data}}
 #' @export
 eff_len_compute = function(x_eff_len){
-#  tr_id_eff_len = unique( c( sapply( x_eff_len, function(x) x$Name ) ) )
-#  y_eff_len = sapply(x_eff_len, function(y){ y$EffectiveLength[match(tr_id_eff_len, y$Name)] } )
-
+  #  tr_id_eff_len = unique( c( sapply( x_eff_len, function(x) x$Name ) ) )
+  #  y_eff_len = sapply(x_eff_len, function(y){ y$EffectiveLength[match(tr_id_eff_len, y$Name)] } )
+  
   EffLen = apply(x_eff_len, 1, median, na.rm = TRUE)
-#  names(EffLen) = tr_id_eff_len
+  #  names(EffLen) = tr_id_eff_len
   return( EffLen )
 }

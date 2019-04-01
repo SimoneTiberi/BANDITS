@@ -39,13 +39,13 @@ my_heidel.diag = function(x, R, by., pvalue = 0.01){
 
 my_pcramer = function(q, eps = 1e-05){
   log.eps <- log(eps)
-#  y = sapply(seq(0, 3, by = 1), function(k){
-#    z <- gamma(k + 0.5) * sqrt(4 * k + 1)/(gamma(k + 1) * 
-#                                             pi^(3/2) * sqrt(q))
-#    u <- (4 * k + 1)^2/(16 * q)
-#    ifelse(u > -log.eps, 0, z * exp(-u) * besselK(x = u, 
-#                                                  nu = 1/4))
-#  })
+  #  y = sapply(seq(0, 3, by = 1), function(k){
+  #    z <- gamma(k + 0.5) * sqrt(4 * k + 1)/(gamma(k + 1) * 
+  #                                             pi^(3/2) * sqrt(q))
+  #    u <- (4 * k + 1)^2/(16 * q)
+  #    ifelse(u > -log.eps, 0, z * exp(-u) * besselK(x = u, 
+  #                                                  nu = 1/4))
+  #  })
   y = vapply(seq(0, 3, by = 1), function(k){
     z <- gamma(k + 0.5) * sqrt(4 * k + 1)/(gamma(k + 1) * 
                                              pi^(3/2) * sqrt(q))
@@ -72,7 +72,7 @@ my_spectrum0.ar = function(x, R){
 char_in_char = function(a, b){
   len_a = nchar(a)
   len_b = nchar(b)
-
+  
   # s represents the start of the sub-string of b
   for(s in seq_len(len_b - len_a + 1) ){
     if( a == substring(b, s, s+len_a-1) ){

@@ -41,10 +41,10 @@ data_dir = system.file("extdata", package = "BANDITS")
 data_dir
 
 # load gene_to_transcript matching:
-data("GeneTr_id", package = "BANDITS")
-# GeneTr_id contains transcripts ids on the first column
+data("gene_tr_id", package = "BANDITS")
+# gene_tr_id contains transcripts ids on the first column
 # and the corresponding gene ids on the second column:
-head(GeneTr_id)
+head(gene_tr_id)
 
 # Specify the directory of the transcript level estimated counts.
 sample_names = paste0("sample", seq_len(4))
@@ -61,9 +61,11 @@ head(counts)
 
 ## Optional (recommended): transcript pre-filtering
 
-transcripts_to_keep = filter_transcripts(gene_to_transcript = GeneTr_id,
-                                         transcript_counts = counts, min_transcript_proportion = 0.01,
-                                         min_transcript_counts = 10, min_gene_counts = 20)
+transcripts_to_keep = filter_transcripts(gene_to_transcript = gene_tr_id,
+                                         transcript_counts = counts,
+                                         min_transcript_proportion = 0.01,
+                                         min_transcript_counts = 10,
+                                         min_gene_counts = 20)
 head(transcripts_to_keep)
 
 }
@@ -71,5 +73,5 @@ head(transcripts_to_keep)
 \code{\link{filter_genes}}, \code{\link{create_data}}, \code{\linkS4class{BANDITS_data}}
 }
 \author{
-Simone Tiberi
+Simone Tiberi \email{simone.tiberi@uzh.ch}
 }
