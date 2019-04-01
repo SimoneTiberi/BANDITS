@@ -17,7 +17,7 @@ using namespace Rcpp;
 
 // TMG represents Together Multi-group
 void centerNumericMatrix_bisTMG(Rcpp::NumericMatrix& X) {
-  const int m = X.ncol();
+  const unsigned int m = X.ncol();
   for (unsigned int j = 0; j < m; ++j) {
     X(Rcpp::_, j) = X(Rcpp::_, j) - Rcpp::mean(X(Rcpp::_, j));
   }
