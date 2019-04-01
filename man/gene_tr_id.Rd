@@ -7,7 +7,7 @@
 \item{gene_tr_id, }{a \code{data.frame} containing the matching between gene (1st column) and transcript identifiers (2nd column).}
 }
 \description{
-A list containing the estimates for the log-precision parameter of the Dirichlet-multinomial distribution.
+Gene-transcript matching
 }
 \examples{
 # load the Gene-Transcript data.frame and visualize its top

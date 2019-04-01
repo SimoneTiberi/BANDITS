@@ -37,7 +37,6 @@ The method is embedded in a Bayesian hierarchical framework, where the posterior
 The allocation of each RNA-seq read to its transcript of origin is treated as a latent variable and also sampled in the MCMC.
 To test for DTU, we compare the average transcript relative abundance between two or more conditions.
 A statistical test is performed, both, at the gene and transcript level, allowing scientists to investigate what specific transcripts are differentially used in significant genes.
-*BANDITS* package version: `r packageVersion("BANDITS")`.
 
 To access the R code used in the vignettes, use:
 ```{r eval=FALSE} 
@@ -64,17 +63,16 @@ Bear in mind that the example code below will not work on any given gtf and fast
 
 If the reads are aligned to the genome first, we can compute a gene-transcript association from the gtf file via *GenomicFeatures* [@GenomicFeatures] library.
 Here we provide an example code:
-```{r eval=FALSE} 
+```{r eval=FALSE}
 suppressMessages(library(GenomicFeatures))
 gtf_file = system.file("extdata","GTF_files","Aedes_aegypti.partial.gtf",
                        package="GenomicFeatures")
-tx = as.list(makeTxDbFromGFF(gtf_file) )
+tx = makeTxDbFromGFF(gtf_file)
 ss = unlist(transcriptsBy(tx, by="gene"))
 gene_tr_id_gtf = data.frame(gene_id = names(ss), 
                             transcript_id = ss$tx_name )
 gene_tr_id_gtf = gene_tr_id_gtf[ rowSums( is.na(gene_tr_id_gtf)) == 0, ] # remove eventual NA's
 gene_tr_id_gtf = unique(gene_tr_id_gtf) # remove eventual duplicated rows
-
 ```
 
 If the reads are aligned directly to the transcriptome, we compute a gene-transcript association from the cDNA fasta file via *Biostrings* [@Biostrings] library.
@@ -94,7 +92,7 @@ gene_tr_id_fasta = unique(gene_tr_id_fasta) # remove eventual duplicated rows
 # DTU pipeline
 
 Load *BANDITS*
-```{r, message=FALSE}
+```{r message=FALSE}
 library(BANDITS)
 ```
 
@@ -208,7 +206,7 @@ The `prior_precision` function builds on top of *DRIMSeq*'s [@DRIMSeq] `DRIMSeq:
 Use the same filtering criteria as in `filter_transcripts`; if transcript pre-filtering is not performed, set `min_transcript_proportion`, `min_transcript_counts` and `min_gene_counts` to 0.
 ```{r}
 set.seed(61217)
-prec = prior_precision(gene_to_transcript = gene_tr_id,
+precision = prior_precision(gene_to_transcript = gene_tr_id,
                        transcript_counts = counts,
                        min_transcript_proportion = 0.01,
                        min_transcript_counts = 10,
@@ -217,13 +215,13 @@ prec = prior_precision(gene_to_transcript = gene_tr_id,
 
 The first element of the result contains the mean and standard deviation of the log-precision estimates.
 ```{r}
-prec[[1]]
+precision[[1]]
 ```
 
 Plot the histogram of the genewise log-precision estimates.
 The black solid line represents the normally distributed prior distribution for the log-precision parameter.
 ```{r}
-plot_precision(prec)
+plot_precision(precision)
 ```
 
 ## Test for DTU
@@ -250,8 +248,8 @@ We run the DTU method.
 `group_col_name` indicates the name of the column of `samples_design` containing the group id of each sample (by default `group_col_name = "group"`).
 ```{r}
 set.seed(61217)
-x = test_DTU(BANDITS_data = BANDITS_data,
-             prior_precision = prec$prior,
+results = test_DTU(BANDITS_data = BANDITS_data,
+             prior_precision = precision$prior,
              samples_design = samples_design,
              group_col_name = "group",
              R = 10^4, burn_in = 2*10^3, n_cores = 2,
@@ -263,46 +261,46 @@ All results are sorted, by default, according to the significance of the gene le
 
 To read a full description of the output from `test_DTU`, see `help(BANDITS\_test)`.
 ```{r}
-x
+results
 ```
 
 Functions `top_genes`, `top_transcripts` and `convergence` can be used to access gene level results, transcript level results and convergence output, respectively.
 
 Visualize the most significant Genes, sorted by gene level significance.
 ```{r}
-head(top_genes(x))
+head(top_genes(results))
 ```
 
 Alternatively, gene-level results can also be sorted according to "DTU_measure", which is a measure of the strength of the change between average relative abundances of the two groups.
 ```{r}
-head(top_genes(x, sort_by = "DTU_measure"))
+head(top_genes(results, sort_by = "DTU_measure"))
 ```
 
 Visualize the most significant transcripts, sorted by transcript level significance.
 ```{r}
-head(top_transcripts(x, sort_by = "transcript"))
+head(top_transcripts(results, sort_by = "transcript"))
 ```
 
 Visualize the convergence output for the most significant genes, sorted by gene level significance.
 ```{r}
-head(convergence(x))
+head(convergence(results))
 ```
 
 We can further use the `gene` function to gather all output for a specific gene: gene level, transcript level and convergence results.
 ```{r}
-top_gene = top_genes(x, n = 1)
-gene(x, top_gene$Gene_id)
+top_gene = top_genes(results, n = 1)
+gene(results, top_gene$Gene_id)
 ```
 
 Similarly we can use the `transcript` function to gather all output for a specific transcript.
 ```{r}
-top_transcript = top_transcripts(x, n = 1)
-transcript(x, top_transcript$Transcript_id)
+top_transcript = top_transcripts(results, n = 1)
+transcript(results, top_transcript$Transcript_id)
 ```
 
 Finally, we can plot the estimated average transcript relative expression in the two groups for a specific gene via `plot_proportions`.
 ```{r}
-plot_proportions(x, top_gene$Gene_id)
+plot_proportions(results, top_gene$Gene_id)
 ```
 
 # Session info

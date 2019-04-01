@@ -48,17 +48,17 @@ head(counts)
 # \\code{min_transcript_counts} and \\code{min_gene_counts} to 0.
 
 #set.seed(61217)
-#prec = prior_precision(gene_to_transcript = gene_tr_id, transcript_counts = counts,
+#precision = prior_precision(gene_to_transcript = gene_tr_id, transcript_counts = counts,
 #                       min_transcript_proportion = 0.01, min_transcript_counts = 10,
 #                       min_gene_counts = 20, n_cores = 2)
 
-# load the pre-computes precision estimates:
-data(prec, package = "BANDITS")
+# load the pre-computed precision estimates:
+data(precision, package = "BANDITS")
 
 # Plot the histogram of the genewise log-precision estimates.
 # The black solid line represents the normally distributed prior distribution 
 # for the log-precision parameter.
-plot_precision(prec)
+plot_precision(precision)
 
 }
 \seealso{

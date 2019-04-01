@@ -131,61 +131,61 @@ BANDITS_data = filter_genes(BANDITS_data, min_counts_per_gene = 20)
 # \\code{min_transcript_counts} and \\code{min_gene_counts} to 0.
 
 #set.seed(61217)
-#prec = prior_precision(gene_to_transcript = gene_tr_id, transcript_counts = counts,
+#precision = prior_precision(gene_to_transcript = gene_tr_id, transcript_counts = counts,
 #                       min_transcript_proportion = 0.01, min_transcript_counts = 10,
 #                       min_gene_counts = 20, n_cores = 2)
 
-# load the pre-computes precision estimates:
-data(prec, package = "BANDITS")
+# load the pre-computed precision estimates:
+data(precision, package = "BANDITS")
 
 # Plot the histogram of the genewise log-precision estimates.
 # The black solid line represents the normally distributed prior distribution 
 # for the log-precision parameter.
-plot_precision(prec)
+plot_precision(precision)
 
 
 
 ## Test for DTU
 #set.seed(61217)
-#x = test_DTU(BANDITS_data = BANDITS_data,
-#             prior_precision = prec$prior,
+#results = test_DTU(BANDITS_data = BANDITS_data,
+#             prior_precision = precision$prior,
 #             samples_design = samples_design,
 #             R = 10^4, burn_in = 2*10^3, n_cores = 2,
 #             gene_to_transcript = gene_tr_id)
 
 # load the pre-computed results:
-data("DTU_results", package = "BANDITS")
-x
+data("results", package = "BANDITS")
+results
 
 # Visualize the most significant Genes, sorted by gene level significance.
-head(top_genes(x))
+head(top_genes(results))
 
 # Alternatively, gene-level results can also be sorted according to DTU_measure, 
 # which is a measure of the strength of the change between the 
 # average relative abundances of the two groups.
-head(top_genes(x, sort_by = "DTU_measure"))
+head(top_genes(results, sort_by = "DTU_measure"))
 
 # Visualize the most significant transcripts, sorted by transcript level significance.
-head(top_transcripts(x, sort_by = "transcript"))
+head(top_transcripts(results, sort_by = "transcript"))
 
 # Visualize the convergence output for the most significant genes, 
 # sorted by gene level significance.
-head(convergence(x))
+head(convergence(results))
 
 # We can further use the \\code{gene} function to gather all output for a specific gene:
 # gene level, transcript level and convergence results.
-top_gene = top_genes(x, n = 1)
-gene(x, top_gene$Gene_id)
+top_gene = top_genes(results, n = 1)
+gene(results, top_gene$Gene_id)
 
 # Similarly we can use the \\code{transcript} function to gather all output 
 # for a specific transcript.
-top_transcript = top_transcripts(x, n = 1)
-transcript(x, top_transcript$Transcript_id)
+top_transcript = top_transcripts(results, n = 1)
+transcript(results, top_transcript$Transcript_id)
 
 #Finally, we can plot the estimated average transcript relative expression 
 # in the two groups for a specific gene via \\code{plot_proportions}.
 library(ggplot2)
-plot_proportions(x, top_gene$Gene_id)
+plot_proportions(results, top_gene$Gene_id)
 
 }
 \seealso{
