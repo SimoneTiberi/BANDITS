@@ -184,7 +184,7 @@ When providing `transcripts_to_keep`, the function filters internally transcript
 When filtering transripts, we suggest to parallelize computations and use one core per sample (i.e., `n_cores = length(path_to_eq_classes)`).
 Since at least 2 transcripts are necessary to study differential splicing, genes with a single transcript are not analyzed.
 ```{r}
-BANDITS_data = create_data(gene_to_transcript = gene_tr_id,
+input_data = create_data(gene_to_transcript = gene_tr_id,
                            path_to_eq_classes = equiv_classes_files,
                            eff_len = eff_len, n_cores = 2,
                            transcripts_to_keep = transcripts_to_keep)
@@ -194,7 +194,7 @@ If transcripts pre-filtering is not wanted, do not specify `transcripts_to_keep`
 
 After loading the data, with `filter_genes(data, min_counts_per_gene = 20)`, we remove genes with less than 20 counts overall (i.e.,  considering all equivalence classes across all samples).
 ```{r}
-BANDITS_data = filter_genes(BANDITS_data, min_counts_per_gene = 20)
+input_data = filter_genes(input_data, min_counts_per_gene = 20)
 ```
 
 ## Optional (recommended): infer an informative prior for the precision parameter
@@ -248,7 +248,7 @@ We run the DTU method.
 `group_col_name` indicates the name of the column of `samples_design` containing the group id of each sample (by default `group_col_name = "group"`).
 ```{r}
 set.seed(61217)
-results = test_DTU(BANDITS_data = BANDITS_data,
+results = test_DTU(BANDITS_data = input_data,
              prior_precision = precision$prior,
              samples_design = samples_design,
              group_col_name = "group",

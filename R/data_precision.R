@@ -13,6 +13,13 @@
 #' }
 #
 #' @examples
+#' # Computed as shown in the vignettes, see: browseVignettes("BANDITS")
+#'
+#' #set.seed(61217)
+#' #precision = prior_precision(gene_to_transcript = gene_tr_id, transcript_counts = counts,
+#' #                       min_transcript_proportion = 0.01, min_transcript_counts = 10,
+#' #                       min_gene_counts = 20, n_cores = 2)
+#' 
 #' # load the precision estimates
 #' data(precision, package = "BANDITS")
 #' 

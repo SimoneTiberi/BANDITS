@@ -4,10 +4,19 @@
 #' @name results
 #' @aliases results
 #'
-#' @param results, a \code{\linkS4class{BANDITS_test}} object containing the results of the DTU test,
+#' @param results a \code{\linkS4class{BANDITS_test}} object containing the results of the DTU test,
 #' generated with \code{\link{test_DTU}}.
 #' 
 #' @examples
+#' # Computed as shown in the vignettes, see: browseVignettes("BANDITS")
+#' 
+#' #set.seed(61217)
+#' #results = test_DTU(BANDITS_data = BANDITS_data,
+#' #             prior_precision = precision$prior,
+#' #             samples_design = samples_design,
+#' #             R = 10^4, burn_in = 2*10^3, n_cores = 2,
+#' #             gene_to_transcript = gene_tr_id)
+#' 
 #' # load the pre-computed results:
 #' data("results", package = "BANDITS")
 #' results

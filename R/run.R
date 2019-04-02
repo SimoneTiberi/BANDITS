@@ -93,16 +93,20 @@
 #' samples_design$sample_id
 #' 
 #' # create data and filter internally lowly abundant transcripts:
-#' BANDITS_data = create_data(gene_to_transcript = gene_tr_id,
-#'                            path_to_eq_classes = equiv_classes_files, eff_len = eff_len, 
-#'                            n_cores = 2,
-#'                            transcripts_to_keep = transcripts_to_keep)
+#' #input_data = create_data(gene_to_transcript = gene_tr_id,
+#' #                           path_to_eq_classes = equiv_classes_files, eff_len = eff_len, 
+#' #                           n_cores = 2,
+#' #                           transcripts_to_keep = transcripts_to_keep)
+#' 
+#' # load the pre-computed data:
+#' data("input_data", package = "BANDITS")
+#' input_data
 #' 
 #' # If transcripts pre-filtering is not wanted, 
 #' # do not specify \code{transcripts_to_keep} parameter.
 #' 
 #' # Filter lowly abundant genes:
-#' BANDITS_data = filter_genes(BANDITS_data, min_counts_per_gene = 20)
+#' input_data = filter_genes(input_data, min_counts_per_gene = 20)
 #' 
 #' 
 #' 
@@ -129,7 +133,7 @@
 #' 
 #' ## Test for DTU
 #' #set.seed(61217)
-#' #results = test_DTU(BANDITS_data = BANDITS_data,
+#' #results = test_DTU(BANDITS_data = input_data,
 #' #             prior_precision = precision$prior,
 #' #             samples_design = samples_design,
 #' #             R = 10^4, burn_in = 2*10^3, n_cores = 2,

@@ -4,12 +4,13 @@
 \alias{gene_tr_id}
 \title{Gene-transcript matching}
 \arguments{
-\item{gene_tr_id, }{a \code{data.frame} containing the matching between gene (1st column) and transcript identifiers (2nd column).}
+\item{gene_tr_id}{a \code{data.frame} containing the matching between gene (1st column) and transcript identifiers (2nd column).}
 }
 \description{
 Gene-transcript matching
 }
 \examples{
+# Computed as shown in the vignettes, see: browseVignettes("BANDITS")
 # load the Gene-Transcript data.frame and visualize its top
 data(gene_tr_id, package = "BANDITS")
 head(gene_tr_id)
