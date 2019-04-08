@@ -82,10 +82,12 @@ compute_pval_FULL = function(A, B, K, N){
   
   CV     = cov(gamma) # cov is 20ish times faster than posterior mode (very marginal cost).
   mode   = apply(gamma, 2, find.mode, adjust = 10)
-  mode_A = apply(A, 2, sum) # find.mode (mode) or sum (mean)
+  mode_A = colSums(A) # find.mode (mode) or sum (mean)
   mode_A = mode_A/sum(mode_A)
-  mode_B = apply(B, 2, sum) # find.mode (mode) or sum (mean)
+  sd_A = sqrt(diag(var(A)))
+  mode_B = colSums(B) # find.mode (mode) or sum (mean)
   mode_B = mode_B/sum(mode_B)
+  sd_B = sqrt(diag(var(B)))
   # find.mode is 20-30 % faster than posterior.moode
   
   # transcript level test:
@@ -105,9 +107,9 @@ compute_pval_FULL = function(A, B, K, N){
   # 2) the p.value obtained removing the smallest difference (min(gamma))
   # 3) the p.value obtained removing the (overall summing the two groups) most lowly expressed transcript.
   # 4) a randomly selected p_value
-  sel_1 = which.min(abs(mode)) # min diff between pi's in A and B.
-  sel_2 = which.min(mode_A + mode_B) # most lowly expressed transcript overall in A + B.
-  ran = sample.int(K, 1)
+  #sel_1 = which.min(abs(mode)) # min diff between pi's in A and B.
+  #sel_2 = which.min(mode_A + mode_B) # most lowly expressed transcript overall in A + B.
+  #ran = sample.int(K, 1)
   
   # I also record if the dominant transcript is inverted between the two conditions.
   # Inverted defined w.r.t the posterior mode.
@@ -115,9 +117,12 @@ compute_pval_FULL = function(A, B, K, N){
   # In this case I can also consider less stringent constraints such as the Chi_2 maybe.
   
   # Score to highlight the impact of DS:
-  max_diff_pi_T = max(abs(mode_A - mode_B)); top2_diff_pi_T = sum(sort(abs(mode_A - mode_B), decreasing = TRUE)[seq_len(2)])
+  # max_diff_pi_T = max(abs(mode_A - mode_B)); 
+  top2_diff_pi_T = sum(sort(abs(mode_A - mode_B), decreasing = TRUE)[seq_len(2)])
   
-  list( c(  mean(p_value),   p_value[sel_1],   p_value[sel_2],   p_value[ran], inverted, max_diff_pi_T, top2_diff_pi_T ),
+  list( c(  mean(p_value),   # p_value[sel_1],   p_value[sel_2],   p_value[ran], 
+            inverted, # max_diff_pi_T, 
+            top2_diff_pi_T ),
         trancript_res,
-        mode_A, mode_B)
+        mode_A, mode_B, sd_A, sd_B)
 }

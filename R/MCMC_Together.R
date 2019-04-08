@@ -21,7 +21,7 @@ wald_DTU_test_Together_FULL = function(f, l, exon_id, N_1, N_2, R, burn_in,
   
   ### ### ### if K == 1, do not provide a p.value, set pi = 1 in the function above!!!
   if( all(K == 1) ){
-    res_gene =  matrix(-1, ncol = 7, nrow  = length(K))
+    res_gene =  matrix(-1, ncol = 3, nrow  = length(K))
     rownames(res_gene) = genes
     res_transcript = NULL
     res = list(res_gene, res_transcript)
@@ -32,7 +32,7 @@ wald_DTU_test_Together_FULL = function(f, l, exon_id, N_1, N_2, R, burn_in,
                                    burn_in = burn_in, mean_log_precision = mean_log_precision, sd_log_precision = sd_log_precision)
   
   if(chain[[2]][1] == 0){ # IF the chain didn't converge (3 times), return NULL result:
-    res_gene =  matrix(-1, ncol = 7, nrow  = length(K))
+    res_gene =  matrix(-1, ncol = 3, nrow  = length(K))
     rownames(res_gene) = genes
     res_transcript = NULL
     res = list(res_gene, res_transcript)
@@ -177,11 +177,11 @@ MCMC_chain_Together_FULL = function(f, l, exon_id, N_1, N_2, R, K, gene_id, burn
 
 
 pval_compute_Together_FULL = function(A, B, K, N, genes, gene_id, transcripts){
-  res = matrix(-1, ncol = 7, nrow  = length(K))
+  res = matrix(-1, ncol = 3, nrow  = length(K))
   if(sum(K == 1) == length(K)){
     return( res) # if all genes have 1 transcript only, I cannot infer any DTU genes so I return all -1's
   }
-  res_tr = mode_A = mode_B = list()
+  res_tr = mode_A = mode_B = sd_A = sd_B = list()
   # do usual testing procedure on each gene separately.
   
   for(g in seq_along(K)){
@@ -192,11 +192,13 @@ pval_compute_Together_FULL = function(A, B, K, N, genes, gene_id, transcripts){
       res_tr[[g]] = pval_pi_T[[2]] # give transcript names!!!
       mode_A[[g]] = pval_pi_T[[3]]
       mode_B[[g]] = pval_pi_T[[4]]
+      sd_A[[g]] = pval_pi_T[[5]]
+      sd_B[[g]] = pval_pi_T[[6]]
       names(res_tr[[g]])  = transcripts[gene_id[,g]]
       # MAKE SURE THE ORDER OF THE TRANSCRIPTS IS CORRECT!!!
     }
   }
   rownames(res) = genes # gene id to the gene results
   #  colnames(res_tr) = transcripts # transcript id to the transcript results
-  list( res, res_tr, mode_A, mode_B)
+  list( res, res_tr, mode_A, mode_B, sd_A, sd_B)
 }

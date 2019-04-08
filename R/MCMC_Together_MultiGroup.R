@@ -1,8 +1,13 @@
-wald_DTU_test_MultiGroup_Together = function(f, l, exon_id, N, R, burn_in, mean_log_precision, sd_log_precision,
+wald_DTU_test_MultiGroup_Together = function(f, l, exon_id, N, R, burn_in, 
+                                             mean_log_precision, sd_log_precision,
                                              genes, transcripts, theshold_pval = 0.1){
   N_groups = length(N)
   n_genes = length(genes)
   
+  K = vapply(genes, function(x) sum(names(transcripts) == x), FUN.VALUE = integer(1))
+  # sapply(genes, function(x) sum(names(transcripts) == x))
+  
+  K_tot = sum(K)
   gene_id = vapply(genes, function(x) names(transcripts) == x, FUN.VALUE = logical(K_tot))
   # sapply(genes, function(x) names(transcripts) == x)
   
@@ -13,11 +18,6 @@ wald_DTU_test_MultiGroup_Together = function(f, l, exon_id, N, R, burn_in, mean_
   exon_id = exon_id[order,]
   transcripts = transcripts[order]
   gene_id = gene_id[order,]
-  
-  # TRUE-FALSE matrix telling me what genes are associated to what transcripts!
-  # gene_id[,i] refers to the i-th gene.
-  K = vapply(genes, function(x) sum(names(transcripts) == x), FUN.VALUE = integer(1))
-  # sapply(genes, function(x) sum(names(transcripts) == x))
   
   ### ### ### if K == 1, do not provide a p.value, set pi = 1 in the function above!!!
   if( all(K == 1) ){
@@ -198,7 +198,7 @@ MCMC_chain_MultiGroup_Together = function(f, l, exon_id, N, N_groups, n_genes, R
 
 pval_compute_Together_MultiGroup = function(mcmc, K, n_genes, genes, N_groups, gene_id, transcripts){
   res = rep(-1, n_genes)
-  res_tr = mode_groups = list()
+  res_tr = mode_groups = sd_groups = list()
   
   # do usual testing procedure on each gene separately:
   for(g in seq_along(K)){
@@ -208,9 +208,10 @@ pval_compute_Together_MultiGroup = function(mcmc, K, n_genes, genes, N_groups, g
       res[g] = pval_pi_T[[1]]
       res_tr[[g]] = pval_pi_T[[2]]
       mode_groups[[g]] = pval_pi_T[[3]]
+      sd_groups[[g]] = pval_pi_T[[4]]
       names(res_tr[[g]])  = transcripts[gene_id[,g]]
     }
   }
   names(res) = genes # gene id to the gene results
-  list( res, res_tr, mode_groups)
+  list( res, res_tr, mode_groups, sd_groups)
 }

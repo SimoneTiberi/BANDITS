@@ -1,7 +1,7 @@
 Package: BANDITS
 Type: Package
 Title: BANDITS: Bayesian ANalysis of DIfferenTial Splicing
-Version: 0.99.13
+Version: 0.99.0
 Date: 2019-02-19
 Author: Simone Tiberi
 Maintainer: Simone Tiberi <simone.tiberi@uzh.ch>
@@ -20,11 +20,11 @@ Depends: R (>= 3.6.0)
 Imports: Rcpp, doRNG, MASS, data.table, doParallel, parallel, foreach, methods, stats, graphics, ggplot2,
   DRIMSeq, BiocParallel
 LinkingTo: Rcpp, RcppArmadillo
-Suggests: knitr, rmarkdown,
+Suggests: knitr, rmarkdown, testthat,
   tximport, BiocStyle
 SystemRequirements: C++11
-ByteCompile: false
 VignetteBuilder: knitr
 RoxygenNote: 6.1.1
 LazyData: true
+ByteCompile: true
 URL: https://github.com/SimoneTiberi/BANDITS

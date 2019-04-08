@@ -83,6 +83,27 @@ create_data = function(gene_to_transcript,
                        eff_len, n_cores = length(path_to_eq_classes), 
                        transcripts_to_keep = NULL,
                        max_genes_per_group = 50){
+  # check that gene_to_transcript is a matrix or data.frame object
+  if( !is.data.frame(gene_to_transcript) & !is.matrix(gene_to_transcript)  ){
+    message("'gene_to_transcript' must be a matrix or data.frame")
+    return(NULL)
+  }
+  
+  if( ncol(gene_to_transcript) != 2 ){
+    message("'gene_to_transcript' must be a 2 column matrix or data.frame")
+    return(NULL)
+  }
+  
+  if( !all(file.exists(path_to_eq_classes)) ){ # if at least 1 file not found
+    message("'path_to_eq_classes' files not found")
+    return(NULL)
+  }
+  
+  if( !all( names(eff_len) %in% gene_to_transcript[,2])  ){
+    message("All transcript names in 'names(eff_len)' must be in 'gene_to_transcript[,2]'")
+    return(NULL)
+  }
+  
   N = length(path_to_eq_classes)
   
   if(max_genes_per_group > 100){
@@ -117,7 +138,7 @@ create_data = function(gene_to_transcript,
     }
   }
   
-  if( n_cores > 1){ # if n_cores > 1, I use parallel computing tools
+  if( n_cores > 1.5){ # if n_cores > 1, I use parallel computing tools
     suppressWarnings({
       cl = makeCluster(n_cores);
     })
@@ -277,7 +298,8 @@ create_data = function(gene_to_transcript,
   # maybe I can use a similar approach to the one used to build the classes from the transcripts, although a 2,000 * 17,000 matrix would be quite big...
   
   ######################################################################################################
-  genes_in_classes_vector_Together = sapply( genes_in_classes_Together, paste, collapse = sep )
+  genes_in_classes_vector_Together = vapply( genes_in_classes_Together, paste, collapse = sep, FUN.VALUE = character(1) )
+    # sapply( genes_in_classes_Together, paste, collapse = sep )
   names( genes_in_classes_vector_Together ) = genes_in_classes_vector_Together
   
   classes_split_per_gene_Together = split( all_classes_vector_Together,
@@ -288,7 +310,8 @@ create_data = function(gene_to_transcript,
   
   # I look for what classes each gene appers in and record whether it happears uniquely or not.
   genes_in_classes_split_per_gene_Together = strsplit(names(classes_split_per_gene_Together), split = sep, fixed = TRUE )
-  n_genes = sapply(genes_in_classes_split_per_gene_Together, length)
+  n_genes = vapply(genes_in_classes_split_per_gene_Together, length, FUN.VALUE = integer(1))
+    # sapply(genes_in_classes_split_per_gene_Together, length)
   
   ######################################################################################################
   # I make group of genes to be modelled together and make a correspondance with the classes in classes_split_per_gene_Together
@@ -301,16 +324,17 @@ create_data = function(gene_to_transcript,
   for(i in seq_len(N_genes_Together) ){
     if(genes_SELECTED_Together[i] %in% genes_included == FALSE){
       g_id = g_id + 1 # I create a new group of genes.
-      classes_associated_to_GROUPs[[g_id]] = which( sapply(genes_in_classes_split_per_gene_Together, function(x){ genes_SELECTED_Together[i] %in% x}) )
+      classes_associated_to_GROUPs[[g_id]] = which( vapply(genes_in_classes_split_per_gene_Together, function(x){ genes_SELECTED_Together[i] %in% x}, FUN.VALUE = logical(1)) )
+        # which( sapply(genes_in_classes_split_per_gene_Together, function(x){ genes_SELECTED_Together[i] %in% x}) )
       GROUPs_of_genes[[g_id]] = unique( unlist(genes_in_classes_split_per_gene_Together[classes_associated_to_GROUPs[[g_id]]]) ) # Genes associated to i-th gene
       j = 1
       genes_included = c(genes_included, genes_SELECTED_Together[i])
       while(j <= length(GROUPs_of_genes[[g_id]]) ){ # I loop on the other genes and repeat the operation
         gene = GROUPs_of_genes[[g_id]][j]
-        if(gene %in% genes_included == FALSE){
+        if( !(gene %in% genes_included) ){
           classes_associated_to_GROUPs[[g_id]] = unique( c(classes_associated_to_GROUPs[[g_id]],
-                                                           which( sapply(genes_in_classes_split_per_gene_Together, 
-                                                                         function(x){ gene %in% x}) ) ))
+                                                           which( vapply(genes_in_classes_split_per_gene_Together, 
+                                                                         function(x){ gene %in% x}, FUN.VALUE = logical(1)) ) ))
           GROUPs_of_genes[[g_id]] = unique( c(GROUPs_of_genes[[g_id]], 
                                               unlist(genes_in_classes_split_per_gene_Together[classes_associated_to_GROUPs[[g_id]]]) ) )
           # Genes associated to i-th gene
@@ -320,15 +344,12 @@ create_data = function(gene_to_transcript,
       }
     }
   }
-  # 13 seconds (Mac)
-  
-  # Error in GROUPs_of_genes[[g_id]] : subscript out of bounds
-  # re-runnig it it works
   
   ######################################################################################################
   # check if a Group has too many genes and split it START:
   ######################################################################################################
-  n_genes_per_group = sapply(GROUPs_of_genes, length)
+  n_genes_per_group = vapply(GROUPs_of_genes, length, FUN.VALUE = integer(1))
+    # sapply(GROUPs_of_genes, length)
   bigGroup = which( n_genes_per_group > max_genes_per_group)
   if(length(bigGroup) > 0){ # if at least 1 group to be split
     for(p in bigGroup){
@@ -346,12 +367,15 @@ create_data = function(gene_to_transcript,
       Gene   = unlist(genes_in_classes_split_per_gene_Together[classes_bigGroup])
       
       classes_tmp = classes_split_per_gene_Together[classes_bigGroup]
-      Ngenes = sapply(genes_in_classes_split_per_gene_Together[classes_bigGroup], length)
+      Ngenes = vapply(genes_in_classes_split_per_gene_Together[classes_bigGroup], length, FUN.VALUE = integer(1))
+        # sapply(genes_in_classes_split_per_gene_Together[classes_bigGroup], length)
       Class  = rep(classes_tmp, Ngenes)
-      Counts = rep(counts_split_per_gene_Together[classes_bigGroup], sapply(genes_in_classes_split_per_gene_Together[classes_bigGroup], length))
+      Counts = rep(counts_split_per_gene_Together[classes_bigGroup], vapply(genes_in_classes_split_per_gene_Together[classes_bigGroup], length, FUN.VALUE = integer(1)))
+                   # sapply(genes_in_classes_split_per_gene_Together[classes_bigGroup], length))
       
       class = do.call(c, Class)
-      gene = rep(Gene, sapply(Class, length) )
+      gene = rep(Gene, vapply(Class, length, FUN.VALUE = integer(1)) )
+       # sapply(Class, length) )
       counts = do.call(rbind, Counts)
       
       # Split counts and classes by their gene name.
@@ -380,7 +404,8 @@ create_data = function(gene_to_transcript,
       ################################################################################################
       # put transcript names of classes together as tr1_tr2
       classes_split_bigGroup_num = lapply(classes_split_bigGroup, function(y){
-        as.numeric(factor (sapply(y, function(yy) paste(sort(yy), collapse=sep) )) ) 
+        # as.numeric(factor (sapply(y, function(yy) paste(sort(yy), collapse=sep) )) ) 
+        as.numeric(factor (vapply(y, function(yy) paste(sort(yy), collapse=sep), FUN.VALUE = character(1) ) ) ) 
       })
       
       DUPS = lapply(classes_split_bigGroup_num,  duplicated)
@@ -417,12 +442,14 @@ create_data = function(gene_to_transcript,
       # and make a matrix of 0, 1 indicating, for each class, what transcripts they have.
       ################################################################################################
       Transcripts_per_gene_bigGroup   = lapply(classes_split_bigGroup_Unique, function(x){ unique(unlist(x)) })
-      N_transcripts_per_gene_bigGroup = sapply(Transcripts_per_gene_bigGroup, length)
+      N_transcripts_per_gene_bigGroup = vapply(Transcripts_per_gene_bigGroup, length, FUN.VALUE = integer(1))
+        # sapply(Transcripts_per_gene_bigGroup, length)
       
       N_genes_Unique_bigGroup = length(classes_split_bigGroup_Unique);
       
       classes_Unique_bigGroup = lapply(seq_len(N_genes_Unique_bigGroup), function(x){
-        m = sapply(classes_split_bigGroup_Unique[[x]], function(y){ Transcripts_per_gene_bigGroup[[x]] %in% y })
+        m = vapply(classes_split_bigGroup_Unique[[x]], function(y){ Transcripts_per_gene_bigGroup[[x]] %in% y }, FUN.VALUE = logical( length( Transcripts_per_gene_bigGroup[[x]] ) ))
+        # sapply(classes_split_bigGroup_Unique[[x]], function(y){ Transcripts_per_gene_bigGroup[[x]] %in% y })
         ifelse(m, 1, 0)
       })
       # TO DO: REMOVE CLASSES from transcripts which are not present!
@@ -479,7 +506,8 @@ create_data = function(gene_to_transcript,
   # Finally, for each gene, consider the full list of transcripts (to define ... and ...)
   # and make a matrix of 0, 1 indicating, for each class, what transcripts they have.
   Transcripts_per_GROUP = lapply(classes_ALL_together_per_GROUP, function(x){ unique(unlist(x)) })
-  N_transcripts_per_GROUP = sapply(Transcripts_per_GROUP, length);
+  N_transcripts_per_GROUP = vapply(Transcripts_per_GROUP, length, FUN.VALUE = integer(1))
+    # sapply(Transcripts_per_GROUP, length)
   
   # since classes_ALL_together_per_GROUP[[i]] has a list per gene, 
   # and then each classes_ALL_together_per_GROUP[[i]][[j]][[1]] has a list per equiv class
@@ -503,14 +531,16 @@ create_data = function(gene_to_transcript,
   
   # From the transcripts, I create the classes
   classes_Together = lapply(seq_along(classes_ALL_together_per_GROUP_unlisted), function(x){
-    m = sapply(classes_ALL_together_per_GROUP_unlisted[[x]], function(y){ Transcripts_per_GROUP[[x]] %in% unlist(y) })
+    # m = sapply(classes_ALL_together_per_GROUP_unlisted[[x]], function(y){ Transcripts_per_GROUP[[x]] %in% unlist(y) })
+    m = vapply(classes_ALL_together_per_GROUP_unlisted[[x]], function(y){ Transcripts_per_GROUP[[x]] %in% unlist(y) }, FUN.VALUE = logical( length( Transcripts_per_GROUP[[x]] ) ))
     ifelse(m, 1, 0)
   })
   
   ################################################################################################
   # Associate the Median eff length of transcripts:
   ################################################################################################
-  n = sapply(Transcripts_per_GROUP, length)
+  n = vapply(Transcripts_per_GROUP, length, FUN.VALUE = integer(1))
+  # sapply(Transcripts_per_GROUP, length)
   df_eff_len_Unique = data.frame( Class_id=rep(seq_along(n), n), Tr_id = unlist(Transcripts_per_GROUP))
   df_eff_len_Unique$eff_len = eff_len[ match(df_eff_len_Unique$Tr_id, names(eff_len))  ]
   
@@ -526,7 +556,8 @@ create_data = function(gene_to_transcript,
   
   # use the gene_to_transcript matrix
   
-  n = sapply(Transcripts_per_GROUP, length)
+  n = vapply(Transcripts_per_GROUP, length, FUN.VALUE = integer(1))
+  # sapply(Transcripts_per_GROUP, length)
   df_tmp = data.frame( Class_id=rep(seq_along(n), n), Tr_id = unlist(Transcripts_per_GROUP))
   df_tmp$Gene_id = Gene_id[ match(df_tmp$Tr_id, Tr_id)  ]
   
@@ -542,7 +573,8 @@ create_data = function(gene_to_transcript,
   # Filter elements with < 2 transcripts per gene:
   ######################################################################################################
   # Filter Unique genes:
-  K = sapply(eff_len_tr_Unique, length)
+  K = vapply(eff_len_tr_Unique, length, FUN.VALUE = integer(1))
+    # sapply(eff_len_tr_Unique, length)
   SEL_tr = K > 1
   genes_SELECTED_Unique        = genes_SELECTED_Unique[SEL_tr]
   Transcripts_per_gene_Unique  = Transcripts_per_gene_Unique[SEL_tr]
@@ -553,13 +585,15 @@ create_data = function(gene_to_transcript,
   # store all genes and transcripts that will be analyzed (i.e., in genes with > 2 transcripts):
   K = lapply( seq_len(N_GROUPS),
               function(id){
-                sapply(genes_per_GROUP_unique_together[[id]], function(x) sum(names(Transcripts_per_GROUP[[id]]) == x) )
+                # sapply(genes_per_GROUP_unique_together[[id]], function(x) sum(names(Transcripts_per_GROUP[[id]]) == x) )
+                vapply(genes_per_GROUP_unique_together[[id]], function(x) sum(names(Transcripts_per_GROUP[[id]]) == x), FUN.VALUE = integer(1))
               }) # compute the number of transcrips belonging to 1 each gene.
   
-  all_genes = c(genes_SELECTED_Unique, unlist( sapply(seq_along(K), function(id){ genes_per_GROUP_unique_together[[id]][ K[[id]] > 1] }) ) )
+  all_genes = c(genes_SELECTED_Unique, unlist( lapply(seq_along(K), function(id){ genes_per_GROUP_unique_together[[id]][ K[[id]] > 1] }) ) )
   
   # Filter Together genes (only if all genes in a group have < 2 transcripts)
-  SEL_tr = sapply(K, function(x) any(x > 1) ) # at least 1 gene with > 1 transcript
+  SEL_tr = vapply(K, function(x) any(x > 1), FUN.VALUE = logical(1) )
+  # sapply(K, function(x) any(x > 1) ) # at least 1 gene with > 1 transcript
   genes_per_GROUP_unique_together = genes_per_GROUP_unique_together[SEL_tr]
   Transcripts_per_GROUP           = Transcripts_per_GROUP[SEL_tr]
   eff_len_tr_Together             = eff_len_tr_Together[SEL_tr]
@@ -597,14 +631,16 @@ create_data = function(gene_to_transcript,
   }
   
   # stop clusters:
-  stopCluster(cl) 
+  if( n_cores > 1.5){ # if n_cores > 1, I use parallel computing tools
+    stopCluster(cl) 
+  }
   
   ######################################################################################################
   # Make a class out of the results:
   ######################################################################################################
   # Max number of genes and transcripts per GROUP:
-  message(paste("Max ", max(c( sapply(eff_len_tr_Unique, length), sapply(eff_len_tr_Together, length) )), " transcripts per group"))
-  message(paste("Max ", max( sapply(genes_per_GROUP_unique_together, length) ), " genes per group"))
+  message(paste("Max ", max(c( vapply(eff_len_tr_Unique, length, FUN.VALUE = integer(1)), vapply(eff_len_tr_Together, length, FUN.VALUE = integer(1)) )), " transcripts per group"))
+  message(paste("Max ", max( vapply(genes_per_GROUP_unique_together, length, FUN.VALUE = integer(1)) ), " genes per group"))
   
   data = new("BANDITS_data",
              genes       = c(genes_SELECTED_Unique,                 genes_per_GROUP_unique_together), 
@@ -626,8 +662,10 @@ read_eq_classes = function(fn, sep){
   ecs = fr$V1[(as.integer(fr$V1[1])+3):nrow(fr)]
   ecs.s = strsplit(ecs,"\t",fixed=TRUE)
   
-  cnt = as.integer(sapply(ecs.s, last)) # counts for each equiv class
-  trans = sapply(ecs.s, function(u) 1+as.integer(u[2:(length(u)-1)]))
+  cnt = as.integer(vapply(ecs.s, last, FUN.VALUE = character(1)))
+  # as.integer(sapply(ecs.s, last)) # counts for each equiv class
+  trans = lapply(ecs.s, function(u) 1+as.integer(u[2:(length(u)-1)]))
+  # sapply(ecs.s, function(u) 1+as.integer(u[2:(length(u)-1)]))
   
   class_ids = vapply(trans, function(u) paste(sort(ids[unique(u)]),collapse=sep), FUN.VALUE = "id") # I create the id for the class, made of all transcripts of the class separated by _
   
@@ -647,8 +685,10 @@ read_eq_classes_filteringTranscripts = function(fn, transcripts_to_keep, sep) {
   ecs = fr$V1[(as.integer(fr$V1[1])+3):nrow(fr)]
   ecs.s = strsplit(ecs,"\t",fixed=TRUE)
   
-  cnt = as.integer(sapply(ecs.s, last)) # counts for each equiv class
-  trans = sapply(ecs.s, function(u) 1+as.integer(u[2:(length(u)-1)]))
+  cnt = as.integer(vapply(ecs.s, last, FUN.VALUE = character(1)))
+  # as.integer(sapply(ecs.s, last)) # counts for each equiv class
+  trans = lapply(ecs.s, function(u) 1+as.integer(u[2:(length(u)-1)]))
+  # sapply(ecs.s, function(u) 1+as.integer(u[2:(length(u)-1)]))
   trans = lapply(trans, as.integer)
   trans = lapply(trans, unique)
   
@@ -657,7 +697,8 @@ read_eq_classes_filteringTranscripts = function(fn, transcripts_to_keep, sep) {
   ids_sel = ids[SEL_transcripts] # transcript ids, filtered
   
   #############  #############  #############  #############  #############  #############
-  n = sapply(trans, length)
+  n = vapply(trans, length, FUN.VALUE = integer(1))
+  # sapply(trans, length)
   df = data.frame(Class_id=rep(seq_along(n), n), Tr_id = unlist(trans))
   
   #df = df[df$Tr_id %in% SEL_transcripts, ]
@@ -667,11 +708,12 @@ read_eq_classes_filteringTranscripts = function(fn, transcripts_to_keep, sep) {
   df$Tr_id_SEL = ifelse(df$Tr_id %in% SEL_transcripts, df$Tr_id, NA)
   trans_sel = split(df$Tr_id_SEL, df$Class_id)
   
-  trans_sel = sapply(trans_sel, function(x) x[!is.na(x)])
+  trans_sel = lapply(trans_sel, function(x) x[!is.na(x)])
+  # sapply(trans_sel, function(x) x[!is.na(x)])
   
   #############  #############  #############  #############  #############  #############
   # Now I filter out classes with NO transcripts (where all transcripts were filtered out):
-  SEL_classes = {sapply(trans_sel, length) > 0} # if length == 0, I have 0 transcripts in a class
+  SEL_classes = {vapply(trans_sel, length, FUN.VALUE = integer(1)) > 0.5} # if length == 0, I have 0 transcripts in a class
   
   class_ids_sel = vapply(trans_sel[SEL_classes], function(u) paste(sort(ids[u]),collapse=sep), FUN.VALUE = "id") # I create the id for the class, made of all transcripts of the class separated by _
   
@@ -687,13 +729,13 @@ read_eq_classes_filteringTranscripts = function(fn, transcripts_to_keep, sep) {
   cnt_sel_unique = cnt_sel[DUPS == FALSE] # I filter the counts of the unique classes
   cnt_sel_DUPS   = cnt_sel[DUPS] # I filter the counts of the unique classes
   
-  cnt_sel_unique = sapply(seq_along(class_ids_sel_unique_num), function(i){
+  cnt_sel_unique = vapply(seq_along(class_ids_sel_unique_num), function(i){
     match_dups = class_ids_sel_num[DUPS] == class_ids_sel_unique_num[i] # I look for the matching between the unique classes and duplicatd ones (eliminated)
     if(sum(match_dups) > 0){
       cnt_sel_unique[i] = cnt_sel_unique[i] + sum(cnt_sel_DUPS[match_dups]) # I add the counts of the corresponding duplicated classes
     }
     cnt_sel_unique[i]
-  })
+  }, FUN.VALUE = integer(1))
   #  2.5 times faster than previous cnt_sel_unique computation!
   
   list(ids=ids_sel, counts=cnt_sel_unique, class_ids=class_ids_sel[DUPS == FALSE])

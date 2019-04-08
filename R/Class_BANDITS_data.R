@@ -100,7 +100,16 @@ setClass("BANDITS_data",
 #' @param object a 'BANDITS_data' object.
 #' @export
 setMethod("show", "BANDITS_data", function(object){
-  message(paste0("A 'BANDITS_data' object of length ", length(object@uniqueId), "."))
-  message(paste0("Number of samples: ", ncol(object@counts[[1]]), "."))
-  message(paste0("Number of genes: ", length(object@all_genes), "."))
+  message(paste0("A 'BANDITS_data' object with ", ncol(object@counts[[1]]), " samples and ", length(object@all_genes), " genes."))
 })
+
+setValidity("BANDITS_data", function(object){
+  # Has to return TRUE for a valid object!
+  n_groups = length(input_data@genes)
+  if( (n_groups != length(input_data@transcripts)) | (n_groups != length(input_data@effLen)) | (n_groups != length(input_data@classes)) | (n_groups != length(input_data@counts)) | (n_groups != length(input_data@uniqueId)) ){
+    return("The length of @genes, @transcripts, @effLen, @classes, @counts and @uniqueId must be the same")
+  }
+  
+  return(TRUE)
+})
+

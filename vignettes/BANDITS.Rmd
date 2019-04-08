@@ -12,13 +12,13 @@ author:
   - *SIB
 package: "`r BiocStyle::pkg_ver('BANDITS')`"
 date: "`r format(Sys.Date(), '%m/%d/%Y')`"
-output: 
-  BiocStyle::html_document
 bibliography: References.bib
 vignette: >
   %\VignetteIndexEntry{BANDITS: Bayesian ANalysis of DIfferenTial Splicing}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
+output: 
+  BiocStyle::html_document
 ---
 
 ---
@@ -31,7 +31,12 @@ message=TRUE, error=FALSE, warning=TRUE)
 
 # Abstract
 *BANDITS* is a Bayesian hierarchical method to perform differential splicing via differential transcript usage (DTU).
-*BANDITS* uses a hierarchical structure, via a Dirichlet-Multinomial model, to explicitly model the over-dispersion between replicates and allowing for sample-specific transcript relative abundance (i.e., the proportions).
+*BANDITS* uses a hierarchical structure, via a Dirichlet-multinomial model, to explicitly model the over-dispersion between replicates and allowing for sample-specific transcript relative abundance (i.e., the proportions).
+More mathematically, consider a gene with K transcripts with transcript level counts $Y = (Y_1, \ldots, Y_K)$; we assume that $Y \sim DM(\pi_1, \ldots,\pi_K, \delta)$, where
+$DM$ denotes the Dirichlet-multinomial distribution, 
+$\pi_1, \ldots,\pi_K$ indicate the relative abundance of transcripts $1, \ldots, K$, 
+and $\delta$ represents the precision parameter, modelling the degree of over-dispersion between samples.
+
 We input the equivalence classes and respective counts, where the equivalence classes represent the group of transcripts reads are compatible with.
 The method is embedded in a Bayesian hierarchical framework, where the posterior densities of the parameters are inferred via Markov chain Monte Carlo (MCMC) techniques.
 The allocation of each RNA-seq read to its transcript of origin is treated as a latent variable and also sampled in the MCMC.
@@ -139,10 +144,10 @@ The groups are defined in:
 levels(samples_design$group)
 ```
 
+Here we consider a two-group comparison, however *BANDITS* also allows to compare more than 2 groups.
+
 ## Optional (recommended): transcript pre-filtering
-Pre-filtering lowly abundant transcripts was found to improve performance of differential splicing methods;
-% REF: charlotte and our work!
-furthermore, by simplifying the inferential problem, it also leads to a significant reduction in the computational cost of our method.
+Pre-filtering lowly abundant transcripts was found to improve performance of differential splicing methods; furthermore, by simplifying the inferential problem, it also leads to a significant reduction in the computational cost of our method.
 Albeit not strictly required, we highly suggest to pre-filter transcripts.
 Here, we use a mild filtering cutoff by remove transcripts whose average relative abundance is below 0.01.
 For the filtering step, we use transcript-level estimated counts to compute the average relative abundance.
@@ -150,7 +155,7 @@ For the filtering step, we use transcript-level estimated counts to compute the 
 Compute the transcripts to keep, by filtering lowly abundant transcripts.
 Here `min_transcript_proportion = 0.01` will remove transctipts with estimated mean relative abundance below 0.01.
 We further impose constraints on the total abundance: `min_transcript_counts = 10` indicates that each transcript must have at least 10 estimated counts (adding counts from all samples), and `min_gene_counts = 20` specifies that each gene should have at least 20 estimated counts (adding counts from all samples).
-While running, `filter_transcripts` prints on screen the percentage of transcripts and genes kept after filtering: in this case about 81% of the transcripts and 73% of the genes are filtered.
+While running, `filter_transcripts` prints on screen the percentage of transcripts kept after filtering.
 ```{r}
 transcripts_to_keep = filter_transcripts(gene_to_transcript = gene_tr_id,
                                          transcript_counts = counts, 
@@ -249,7 +254,7 @@ We run the DTU method.
 ```{r}
 set.seed(61217)
 results = test_DTU(BANDITS_data = input_data,
-             prior_precision = precision$prior,
+             precision = precision$prior,
              samples_design = samples_design,
              group_col_name = "group",
              R = 10^4, burn_in = 2*10^3, n_cores = 2,
@@ -299,9 +304,32 @@ transcript(results, top_transcript$Transcript_id)
 ```
 
 Finally, we can plot the estimated average transcript relative expression in the two groups for a specific gene via `plot_proportions`.
+When `CI = TRUE` (default), a solid black line is plotted on top of the histograms, indicating the profile Wald type confidence interval (CI) of each transcript relative expression; the level of the CI can be set via `CI_level` parameter (0.95 by default).
+Note that the width of the CIs is a consequence of the limited ammount of available data (i.e., few counts); the boundaries are usually much smaller in real datasets.
 ```{r}
-plot_proportions(results, top_gene$Gene_id)
+plot_proportions(results, top_gene$Gene_id, CI = TRUE, CI_level = 0.95)
 ```
+
+### Results in detail
+In this Section we aim to explain in detail the output of `test_DTU`.
+
+In both, gene and transcript level tests, `p.values` and `adj.p.values` indicate the p.values and adjusted p.values, where adjusted p.values are obtained via `p.adjust`, by implementing Benjamini and Hochberg correction.
+
+#### Gene level results {-}
+In gene level results, only for two-group comparisons, we also propose a conservative p.value, `p.values_inverted`, which accounts for the inversion of the dominant transcript (i.e., the most expressed transcript).
+If the dominant transcript is the same under both groups, $p.values\_inverted = \sqrt{p.values}$, while if the dominant transcript varies between the two groups, $p.values\_inverted = p.values$.
+In other words, when the dominant transcript is unchanged between conditions, we take the square root of the p.value, which results in an inflated value (e.g., $\sqrt{0.01} = 0.1$).
+This measure is based on the observation that often differential splicing leads to a change in the dominant transcript and, given the same p.value, it will rank higher genes with different dominant transcritps between conditions.
+
+We also propose a `DTU_measure`, again only defined for two-group comparisons, which is intended to measure the intensity of the DTU change, similarly to fold changes in differential expression analyses.
+Consider a gene with K transcripts with relative abundance $\pi_1^{(A)}, \ldots,\pi_K^{(A)}$, for group $A$, and $\pi_1^{(B)}, \ldots,\pi_K^{(B)}$, for group $B$.
+The `DTU_measure` is defined as the absolute difference between the two most expressed transcripts: $\sum_{k \in \tilde{K} } |\pi_k^{(A)} - \pi_k^{(B)}|$, where $\tilde{K}$ indicates the set of two most expressed transcripts across both groups (i.e., adding $\pi_k^{(A)}$ and $\pi_k^{(B)}$).
+
+#### Transcript level results {-}
+In transcript level results, `Max_Gene_Tr.p.val` and `Max_Gene_Tr.Adj.p.val` are two conservative transcript level measures which account for both, the gene and transcript level p.values: they are the maximum of gene and transcripts p.values and adjusted p.values, respectively.
+With these measures, a transcript can only be detected as significant if the corresponding gene is also significant.
+
+`Mean group_name` and `SD group_name` indicate the posterior mean and standard deviation of each transcript relative abundance.
 
 # Session info
 ```{r sessionInfo}

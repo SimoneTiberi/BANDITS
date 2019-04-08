@@ -27,7 +27,7 @@ test_DTU_multi_group = function(BANDITS_data, mean_log_precision, sd_log_precisi
                          .packages=c("BANDITS"),
                          .errorhandling = "stop") %dorng%{
                            # ORDER counts to respect the ordering in "groups" via 'ord_samples'
-                           f = as.matrix(BANDITS_data@counts[[p]][,ord_samples])
+                           f = BANDITS_data@counts[[p]][,ord_samples]
                            sel_samples = colSums(f) > 0.5
                            
                            # select samples with BANDITS_data only:
@@ -57,7 +57,7 @@ test_DTU_multi_group = function(BANDITS_data, mean_log_precision, sd_log_precisi
                                                                          theshold_pval = theshold_pval)
                                }else{ # for the following elements I run the Unique function
                                  if( length(BANDITS_data@effLen[[p]]) > 1 ){ # run test only if there are at least 2 transcripts per gene.
-                                   res = wald_DTU_test_MultiGroup(f = f,
+                                   res = wald_DTU_test_MultiGroup(f = as.data.frame(f),
                                                                   l = BANDITS_data@effLen[[p]], 
                                                                   exon_id = BANDITS_data@classes[[p]],
                                                                   mean_log_precision = mean_log_precision, 
@@ -72,6 +72,7 @@ test_DTU_multi_group = function(BANDITS_data, mean_log_precision, sd_log_precisi
                                }
                                
                              }else{  # if there are only 2 samples left (with counts), run the classical 2-group comparison:
+                               f = as.matrix(f) # the 2-group comparison requires f to be a matrix
                                
                                if( !BANDITS_data@uniqueId[[p]] ){ # for the first (Together) elements I run the together function
                                  res = wald_DTU_test_Together_FULL(f = f,
@@ -92,6 +93,11 @@ test_DTU_multi_group = function(BANDITS_data, mean_log_precision, sd_log_precisi
                                        trans_mode[ , which(sel_groups)[1]] = res[[1]][[3]][[tr_id]]
                                        trans_mode[ , which(sel_groups)[2]] = res[[1]][[4]][[tr_id]]
                                        res[[1]][[3]][[tr_id]] = trans_mod # rows = transcripts; cols = groups
+                                       
+                                       trans_sd = matrix(NaN, nrow = length(res[[1]][[5]][[tr_id]]), ncol = length(sel_groups)) # rows = transcripts; cols = groups
+                                       trans_sd[ , which(sel_groups)[1]] = res[[1]][[5]][[tr_id]]
+                                       trans_sd[ , which(sel_groups)[2]] = res[[1]][[6]][[tr_id]]
+                                       res[[1]][[4]][[tr_id]] = trans_sd # rows = transcripts; cols = groups
                                      }
                                    }
                                  }                                 
@@ -114,6 +120,11 @@ test_DTU_multi_group = function(BANDITS_data, mean_log_precision, sd_log_precisi
                                      trans_mode[ , which(sel_groups)[1]] = res[[1]][[3]]
                                      trans_mode[ , which(sel_groups)[2]] = res[[1]][[4]]
                                      res[[1]][[3]] = trans_mode # rows = transcripts; cols = groups
+                                     
+                                     trans_sd = matrix(NaN, nrow = length(BANDITS_data@transcripts[[p]]), ncol = length(sel_groups)) # rows = transcripts; cols = groups
+                                     trans_sd[ , which(sel_groups)[1]] = res[[1]][[5]]
+                                     trans_sd[ , which(sel_groups)[2]] = res[[1]][[6]]
+                                     res[[1]][[4]] = trans_sd # rows = transcripts; cols = groups
                                    } # only if the mcmc has a return value.
                                  }
                                }
@@ -139,11 +150,14 @@ test_DTU_multi_group = function(BANDITS_data, mean_log_precision, sd_log_precisi
   suppressWarnings({ p_values = as.numeric(p_values) })
   names(p_values) = gene_names
   
-  # sort p.values according to their significance.
-  p_values = sort(p_values, decreasing = FALSE)
-  
-  SEL_ALL  = (p_values != -1) | is.na(p_values)  # remove -1's (genes not analyzed).
+  SEL_ALL  = !is.na(p_values)  # remove NA's (genes not converged).
   p_values = p_values[SEL_ALL]
+  
+  SEL_ALL  = p_values != -1  # remove -1's (genes not analyzed).
+  p_values = p_values[SEL_ALL]
+  
+  # sort p.values according to their significance.
+  p_values = p_values[ order(p_values) ]
   
   # COMPUTE ADJUSTED P.VALS:
   adj.p_values    = p.adjust(p_values, method = "BH") # gene-test
@@ -172,9 +186,23 @@ test_DTU_multi_group = function(BANDITS_data, mean_log_precision, sd_log_precisi
       return(NULL)
     }} )
   
-  mode_groups = do.call(rbind, mode_groups)
+  sd_groups = lapply(p_values_ALL, function(x){
+    y = x[[1]]
+    if(length(y) > 1){
+      y = y[[4]]
+      if(is.list(y)){ # for Together genes, I first need to wrap transcript results from a list of matrices into a unique matrix!
+        y = do.call(rbind, y)
+      }else{
+        return(y)
+      }
+    }else{
+      return(NULL)
+    }} )
   
-  p_values_tr = cbind(p_values_tr, mode_groups)
+  mode_groups = do.call(rbind, mode_groups)
+  sd_groups = do.call(rbind, sd_groups)
+  
+  p_values_tr = cbind(p_values_tr, mode_groups, sd_groups)
   
   cond = !vapply(p_values_tr[,1], is.null, FUN.VALUE = logical(1))
   p_values_tr = p_values_tr[cond,] # filter null results
@@ -194,11 +222,12 @@ test_DTU_multi_group = function(BANDITS_data, mean_log_precision, sd_log_precisi
   tr_DF = data.frame(Gene_id = genes_in_tr, Transcript_id = rownames(p_values_tr), 
                      p.values = p_values_tr[,1], adj.p.values = adj.p_values_tr,
                      Max_Gene_Tr.p.val = max_gene_tr_p.val, Max_Gene_Tr.Adj.p.val = max_gene_tr_adj.p.val,
-                     mean = p_values_tr[,-1],
+                     mean_sd = p_values_tr[,-1],
                      row.names = NULL)
   
   # re-name the group names according to the groups names:
   names(tr_DF)[ seq(7, 6 + length(group_levels)) ] = paste("Mean", group_levels)
+  names(tr_DF)[ seq(7 + length(group_levels), 6 + 2*length(group_levels)) ] = paste("sd", group_levels)
   
   # sort p.values according to their GENE significance:
   tr_DF = tr_DF[ order(p_values[match(tr_DF$Gene_id, rownames(p_values))], tr_DF$p.values) ,]

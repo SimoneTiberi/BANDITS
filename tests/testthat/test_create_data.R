@@ -1,0 +1,30 @@
+test_that("create_data() works faultlessly.", {
+  data("gene_tr_id", package = "BANDITS")
+
+  data_dir = system.file("extdata", package = "BANDITS")
+  sample_name = paste0("sample", 1)
+  equiv_classes_files = file.path(data_dir, sample_name, 
+                                  "aux_info", "eq_classes.txt")
+  
+  quant_files = file.path(data_dir, sample_name, "quant.sf")
+  
+  txi = tximport::tximport(files = quant_files, type = "salmon", txOut = TRUE)
+  
+  eff_len = eff_len_compute(x_eff_len = txi$length)
+
+  input_data = create_data(gene_to_transcript = gene_tr_id,
+                           path_to_eq_classes = equiv_classes_files,
+                           eff_len = eff_len, n_cores = 1,
+                           transcripts_to_keep = NULL)
+  
+  expect_is(input_data, "BANDITS_data")
+  expect_is(input_data@genes[[1]], "character")
+  expect_is(input_data@transcripts[[1]], "character")
+#  expect_is(input_data@effLen[[1]], "vector")
+  expect_is(input_data@effLen[[1]], "numeric")
+  expect_is(input_data@classes[[1]], "matrix")
+  expect_is(input_data@counts[[1]], "data.frame")
+  expect_is(input_data@uniqueId[[1]], "logical")
+  expect_is(input_data@all_genes, "character")
+  expect_true( length(input_data@all_genes) <= length(unlist(input_data@genes)) )
+})

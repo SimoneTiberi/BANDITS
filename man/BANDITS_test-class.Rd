@@ -33,7 +33,8 @@
 
 \S4method{transcript}{BANDITS_test}(x, transcript_id)
 
-\S4method{plot_proportions}{BANDITS_test}(x, gene_id_plot)
+\S4method{plot_proportions}{BANDITS_test}(x, gene_id_plot, CI = TRUE,
+  CI_level = 0.95)
 }
 \arguments{
 \item{object, x}{a 'BANDITS_test' object.}
@@ -51,6 +52,10 @@
 \item{transcript_id}{a character string or vector indicating the transcript or transcripts whose results should be retrieved.}
 
 \item{gene_id_plot}{a character string indicating the gene to plot.}
+
+\item{CI}{a logical element indicating whether to also plot confidence boundaries (TRUE) or not (FALSE).}
+
+\item{CI_level}{a number between 0 and 1, indicating the level of the confidence interval to plot.}
 }
 \value{
 \itemize{
@@ -64,8 +69,10 @@ sort_by_tr = "gene" for sorting results according to gene-level significance; so
 \item \code{convergence(x)}: returns the convergence diagnostic of the posterior MCMC chains for every gene.
 \item \code{gene(x, gene_id)}: returns a list with all results for the gene(s) specified in 'gene_id': gene results, corresponding transcript results and convergence diagnostic.
 \item \code{transcript(x, transcript_id)}: returns a list with all results for the trancript specified in 'transcript_id': transcript results, corresponding gene results and convergence diagnostic.
-\item \code{plot_proportions(x, gene_id_plot)}: plots the posterior means of the average transcripts
+\item \code{plot_proportions(x, gene_id_plot, CI = TRUE, CI_level = 0.95)}: plots the posterior means of the average transcripts
  relative expression (i.e., the proportions) of each condition, for the gene specified in 'gene_id_plot'.
+ If 'CI' is TRUE, a profile Wald type confidence interval will also be plotted for each transcript estimated proportion;
+ the level of the confidence interval is specified by 'CI_level'.
 }
 }
 \description{
@@ -87,7 +94,10 @@ we use a 0.01 threshold on the p.value to reject the null hypotehsis of stationa
 \item Gene_id contains the gene names;
 \item p.values is the gene-level p.values of the DTU test;
 \item adj.p.values is the Benjamini-Hochberg adjusted p.values (via \code{\link{p.adjust}});
-\item p.values_inverted (only available for 2-group comparisons) is a conservative p.value, accounting for the inversion of the dominant transcript between conditions;
+\item p.values_inverted (only available for 2-group comparisons) is a conservative p.value, 
+accounting for the inversion of the dominant transcript between conditions: 
+p.values_inverted = p.values, if the dominant transcript varies between conditions,
+and p.values_inverted = sqrt( p.values ) if both conditions have the same dominant transcript;
 \item adj.p.values_inverted (only available for 2-group comparisons) is the Benjamini-Hochberg adjusted p.values_inverted, via \code{\link{p.adjust}};
 \item DTU_measure (only available for 2-group comparisons) represents a measure of the intensity of changes between conditions.
 }}
@@ -98,9 +108,12 @@ we use a 0.01 threshold on the p.value to reject the null hypotehsis of stationa
 \item Transcript_id contains the transcript names;
 \item p.values is the transcript-level p.values of the DTU test;
 \item adj.p.values is the Benjamini-Hochberg adjusted p.values (via \code{\link{p.adjust}});
-\item Max_Gene_Tr.p.val is a conservative p.value (the maximum between the transcript p.value and corresponding gene p.value);
+\item Max_Gene_Tr.p.val is a conservative p.value and represents the maximum between the transcript p.value and corresponding gene p.value;
 \item Max_Gene_Tr.Adj.p.val is the Benjamini-Hochberg adjusted Max_Gene_Tr.p.val (via \code{\link{p.adjust}});
-\item Mean "group_name" indicates the posterior mean of the average relative abundance of the transcript in group "group_name".
+\item Mean "group_name" indicates the posterior mean of the average relative abundance of the transcript in group "group_name";
+\item sd "group_name" indicates the standard deviation of the average relative abundance of the transcript in group "group_name";
+it indicates the variability in the mean estimate and is used to plot a 
+Wald type confidence interval for the mean relative abundance via \code{\link{plot_proportions}}.
 }}
 
 \item{\code{Convergence}}{a \code{data.frame} containing the convercence diagnostics of the DTU test, structured in the following columns:
@@ -218,7 +231,7 @@ plot_precision(precision)
 ## Test for DTU
 #set.seed(61217)
 #results = test_DTU(BANDITS_data = input_data,
-#             prior_precision = precision$prior,
+#             precision = precision$prior,
 #             samples_design = samples_design,
 #             R = 10^4, burn_in = 2*10^3, n_cores = 2,
 #             gene_to_transcript = gene_tr_id)

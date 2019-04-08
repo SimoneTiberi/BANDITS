@@ -4,14 +4,14 @@
 \alias{test_DTU}
 \title{Perform differential splicing}
 \usage{
-test_DTU(BANDITS_data, prior_precision = NULL, R = 10^4, burn_in = 2
-  * 10^3, samples_design, group_col_name = "group", n_cores = 1,
+test_DTU(BANDITS_data, precision = NULL, R = 10^4, burn_in = 2 *
+  10^3, samples_design, group_col_name = "group", n_cores = 1,
   gene_to_transcript, theshold_pval = 0.1)
 }
 \arguments{
 \item{BANDITS_data}{a 'BANDITS_data' object.}
 
-\item{prior_precision}{a vector with the mean and standard deviation of the log-precision parameter.}
+\item{precision}{a vector with the mean and standard deviation of the log-precision parameter.}
 
 \item{R}{the number of iterations for the MCMC algorithm (after the burn-in).
 Min 10^4.
@@ -152,7 +152,7 @@ plot_precision(precision)
 ## Test for DTU
 #set.seed(61217)
 #results = test_DTU(BANDITS_data = input_data,
-#             prior_precision = precision$prior,
+#             precision = precision$prior,
 #             samples_design = samples_design,
 #             R = 10^4, burn_in = 2*10^3, n_cores = 2,
 #             gene_to_transcript = gene_tr_id)

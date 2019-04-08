@@ -59,10 +59,37 @@
 filter_transcripts = function(gene_to_transcript, transcript_counts,
                               min_transcript_proportion = 0.01, min_transcript_counts = 1, 
                               min_gene_counts = 10){
+  # check that gene_to_transcript is a matrix or data.frame object
+  if( !is.data.frame(gene_to_transcript) & !is.matrix(gene_to_transcript)  ){
+    message("'gene_to_transcript' must be a matrix or data.frame")
+    return(NULL)
+  }
+  
+  if( ncol(gene_to_transcript) != 2 ){
+    message("'gene_to_transcript' must be a 2 column matrix or data.frame")
+    return(NULL)
+  }
+  
+  # check that transcript_counts is a matrix or data.frame object
+  if( !is.data.frame(transcript_counts) & !is.matrix(transcript_counts) ){
+    message("'transcript_counts' must be a matrix or data.frame")
+    return(NULL)
+  }
+  
+  if( !all(dim(transcript_counts) > 0.5) ){
+    message("'transcript_counts' must have at least 1 row (transcripts) and 1 column (samples)")
+    return(NULL)
+  }
+    
   n_tr_initial = nrow(transcript_counts)
   Gene_id = gene_to_transcript[,1]
   Tr_id   = gene_to_transcript[,2]
   
+  if( !all( rownames(transcript_counts) %in% Tr_id)  ){
+    message("All transcript names in 'rownames(transcript_counts)' must be in 'gene_to_transcript[,2]'")
+    return(NULL)
+  }
+    
   # Compute the relative expression of transcripts (the pi's), from Salmon estimated transcript level transcript_counts:
   # I associate each transcript in "transcript_counts" to the respective gene:
   transcript_counts_gene_id = Gene_id[ match(rownames(transcript_counts), Tr_id) ]

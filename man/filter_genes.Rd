@@ -4,10 +4,10 @@
 \alias{filter_genes}
 \title{Filter lowly abundant genes.}
 \usage{
-filter_genes(data, min_counts_per_gene = 10)
+filter_genes(BANDITS_data, min_counts_per_gene = 10)
 }
 \arguments{
-\item{data}{a 'BANDITS_data' object, created with the \code{\link{create_data}} function.}
+\item{BANDITS_data}{a 'BANDITS_data' object, created with the \code{\link{create_data}} function.}
 
 \item{min_counts_per_gene}{the minimum number of counts compatible with a gene (across all samples).}
 }

@@ -6,7 +6,7 @@
 #' 
 #' The function inputs a 'BANDITS_data' object, and returns agaain a 'BANDITS_data' object after filtering genes and groups of genes.
 #'
-#' @param data a 'BANDITS_data' object, created with the \code{\link{create_data}} function.
+#' @param BANDITS_data a 'BANDITS_data' object, created with the \code{\link{create_data}} function.
 #' @param min_counts_per_gene the minimum number of counts compatible with a gene (across all samples).
 #' 
 #' @return A \code{\linkS4class{BANDITS_data}} object.
@@ -74,26 +74,31 @@
 #' @seealso \code{\link{filter_transcripts}}, \code{\link{create_data}}, \code{\linkS4class{BANDITS_data}}
 #' 
 #' @export
-filter_genes  = function(data, min_counts_per_gene = 10){
+filter_genes  = function(BANDITS_data, min_counts_per_gene = 10){
+  if( !is(BANDITS_data, "BANDITS_data") ){
+    message("'BANDITS_data' must be a 'BANDITS_data' object created via the create_data function")
+    return(NULL)
+  }
+  
   # I filter out lowly expressed genes: at least 1 count per sample and at least 11 counts per condition:
-  tot_counts = vapply( data@counts, sum, FUN.VALUE = numeric(1) )
-  # sapply( data@counts, sum)
+  tot_counts = vapply( BANDITS_data@counts, sum, FUN.VALUE = numeric(1) )
+  # sapply( BANDITS_data@counts, sum)
   SEL = tot_counts >= min_counts_per_gene
   
-  n_initial = length(data@all_genes) # only genes with > 1 transcript can be analyzed for DTU
+  n_initial = length(BANDITS_data@all_genes) # only genes with > 1 transcript can be analyzed for DTU
   
-  # filter genes/groups from data:
+  # filter genes/groups from BANDITS_data:
   if(mean(SEL) < 1){ # if mean(SEL) == 1, no genes/groups were filtered.
-    data@genes       = data@genes[SEL]
-    data@transcripts = data@transcripts[SEL]
-    data@effLen      = data@effLen[SEL]
-    data@classes     = data@classes[SEL]
-    data@counts      = data@counts[SEL]
-    data@uniqueId    = data@uniqueId[SEL]
+    BANDITS_data@genes       = BANDITS_data@genes[SEL]
+    BANDITS_data@transcripts = BANDITS_data@transcripts[SEL]
+    BANDITS_data@effLen      = BANDITS_data@effLen[SEL]
+    BANDITS_data@classes     = BANDITS_data@classes[SEL]
+    BANDITS_data@counts      = BANDITS_data@counts[SEL]
+    BANDITS_data@uniqueId    = BANDITS_data@uniqueId[SEL]
   }
-  data@all_genes = data@all_genes[ data@all_genes %in% unlist(data@genes) ]
+  BANDITS_data@all_genes = BANDITS_data@all_genes[ BANDITS_data@all_genes %in% unlist(BANDITS_data@genes) ]
   
-  message(paste0("Initial number of genes: ", n_initial, "; number of selected genes: ", length(data@all_genes) ) )
+  message(paste0("Initial number of genes: ", n_initial, "; number of selected genes: ", length(BANDITS_data@all_genes) ) )
   
-  return(data)
+  return(BANDITS_data)
 }

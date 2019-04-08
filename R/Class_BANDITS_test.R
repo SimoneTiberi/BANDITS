@@ -22,8 +22,10 @@
 #' \item \code{convergence(x)}: returns the convergence diagnostic of the posterior MCMC chains for every gene.
 #' \item \code{gene(x, gene_id)}: returns a list with all results for the gene(s) specified in 'gene_id': gene results, corresponding transcript results and convergence diagnostic.
 #' \item \code{transcript(x, transcript_id)}: returns a list with all results for the trancript specified in 'transcript_id': transcript results, corresponding gene results and convergence diagnostic.
-#' \item \code{plot_proportions(x, gene_id_plot)}: plots the posterior means of the average transcripts
+#' \item \code{plot_proportions(x, gene_id_plot, CI = TRUE, CI_level = 0.95)}: plots the posterior means of the average transcripts
 #'  relative expression (i.e., the proportions) of each condition, for the gene specified in 'gene_id_plot'.
+#'  If 'CI' is TRUE, a profile Wald type confidence interval will also be plotted for each transcript estimated proportion;
+#'  the level of the confidence interval is specified by 'CI_level'.
 #' }
 #' 
 #' @slot Gene_results a \code{data.frame} containing the gene-level results of the DTU test, structured in the following columns:
@@ -31,7 +33,10 @@
 #' \item Gene_id contains the gene names;
 #' \item p.values is the gene-level p.values of the DTU test;
 #' \item adj.p.values is the Benjamini-Hochberg adjusted p.values (via \code{\link{p.adjust}});
-#' \item p.values_inverted (only available for 2-group comparisons) is a conservative p.value, accounting for the inversion of the dominant transcript between conditions;
+#' \item p.values_inverted (only available for 2-group comparisons) is a conservative p.value, 
+#' accounting for the inversion of the dominant transcript between conditions: 
+#' p.values_inverted = p.values, if the dominant transcript varies between conditions,
+#' and p.values_inverted = sqrt( p.values ) if both conditions have the same dominant transcript;
 #' \item adj.p.values_inverted (only available for 2-group comparisons) is the Benjamini-Hochberg adjusted p.values_inverted, via \code{\link{p.adjust}};
 #' \item DTU_measure (only available for 2-group comparisons) represents a measure of the intensity of changes between conditions.
 #' }
@@ -42,9 +47,12 @@
 #' \item Transcript_id contains the transcript names;
 #' \item p.values is the transcript-level p.values of the DTU test;
 #' \item adj.p.values is the Benjamini-Hochberg adjusted p.values (via \code{\link{p.adjust}});
-#' \item Max_Gene_Tr.p.val is a conservative p.value (the maximum between the transcript p.value and corresponding gene p.value);
+#' \item Max_Gene_Tr.p.val is a conservative p.value and represents the maximum between the transcript p.value and corresponding gene p.value;
 #' \item Max_Gene_Tr.Adj.p.val is the Benjamini-Hochberg adjusted Max_Gene_Tr.p.val (via \code{\link{p.adjust}});
-#' \item Mean "group_name" indicates the posterior mean of the average relative abundance of the transcript in group "group_name".
+#' \item Mean "group_name" indicates the posterior mean of the average relative abundance of the transcript in group "group_name";
+#' \item sd "group_name" indicates the standard deviation of the average relative abundance of the transcript in group "group_name";
+#' it indicates the variability in the mean estimate and is used to plot a 
+#' Wald type confidence interval for the mean relative abundance via \code{\link{plot_proportions}}.
 #' }
 #' 
 #' @slot Convergence a \code{data.frame} containing the convercence diagnostics of the DTU test, structured in the following columns:
@@ -161,7 +169,7 @@
 #' ## Test for DTU
 #' #set.seed(61217)
 #' #results = test_DTU(BANDITS_data = input_data,
-#' #             prior_precision = precision$prior,
+#' #             precision = precision$prior,
 #' #             samples_design = samples_design,
 #' #             R = 10^4, burn_in = 2*10^3, n_cores = 2,
 #' #             gene_to_transcript = gene_tr_id)
@@ -269,7 +277,7 @@ setMethod("top_transcripts", "BANDITS_test", function(x, n = Inf, sort_by_tr="ge
   }
   
   # take the min between the provided number and the size of the matrix:
-  n = min(n, nrow(x@Gene_results) )
+  n = min(n, nrow(x@Transcript_results) )
   
   if(sort_by_tr == "gene"){ # transcript results sorted according to gene-level p.value
     return(x@Transcript_results[seq_len(n),])
@@ -335,8 +343,17 @@ setGeneric("plot_proportions", function(x, ...)
 
 #' @rdname BANDITS_test-class
 #' @param gene_id_plot a character string indicating the gene to plot.
+#' @param CI a logical element indicating whether to also plot confidence boundaries (TRUE) or not (FALSE).
+#' @param CI_level a number between 0 and 1, indicating the level of the confidence interval to plot.
 #' @export
-setMethod("plot_proportions", "BANDITS_test", function(x, gene_id_plot){
+setMethod("plot_proportions", "BANDITS_test", function(x, gene_id_plot,
+                                                       CI = TRUE,
+                                                       CI_level = 0.95){
+  if(!is.logical(CI)){
+    message("'CI' must be 'TRUE' or 'FALSE'")
+    return(NULL)
+  }
+
   if(!is.character(gene_id_plot)){
     gene_id_plot = as.character(gene_id_plot)
   }
@@ -356,6 +373,7 @@ setMethod("plot_proportions", "BANDITS_test", function(x, gene_id_plot){
   sel = x@Transcript_results$Gene_id == gene_id_plot
   
   means = x@Transcript_results[sel, grep("Mean", names(x@Transcript_results))]
+  SD =  x@Transcript_results[sel, grep("sd", names(x@Transcript_results))]
   n_groups = ncol(means)
   tr_names = x@Transcript_results$Transcript_id[sel]
   # impose an order to the transcripts (according to the over-all relative abudance):
@@ -363,17 +381,19 @@ setMethod("plot_proportions", "BANDITS_test", function(x, gene_id_plot){
   
   prop_samp = data.frame(feature_id = factor( rep(tr_names,n_groups), levels = tr_names[ord]), 
                          proportion = unlist(c(means)),
+                         LB = pmax(0, unlist(c(means - qnorm(1 - (1-CI_level)/2) * SD)) ), # LB must be >= 0
+                         UB = pmin(1, unlist(c(means + qnorm(1 - (1-CI_level)/2) * SD)) ), # UB must be <= 0
                          group = rep(group_names, each = nrow(means)),
                          stringsAsFactors = FALSE)
   
   # Plot the estimated average proportions of each groups:
-  ggp <- ggplot() +
+  ggp = ggplot() +
     geom_bar(data = prop_samp, aes_string(x = "feature_id", y = "proportion", 
                                           fill = "group"),
              stat = "identity", position = position_dodge(width = 0.9)) +
     theme_bw() + 
     theme(axis.text.x = element_text(angle = 90, vjust = 0.5), 
-          axis.text=element_text(size=16), 
+          axis.text = element_text(size=16), 
           axis.title = element_text(size=14, face="bold"), 
           plot.title = element_text(size=16), 
           legend.position = "right", 
@@ -381,16 +401,35 @@ setMethod("plot_proportions", "BANDITS_test", function(x, gene_id_plot){
           legend.text = element_text(size = 14)) +
     ggtitle(paste("Gene:", gene_id_plot, sep=" ")) +
     xlab("Features") +
-    ylab("Proportions")
+    ylab("Proportions") +
+    geom_point(data = prop_samp, 
+               aes_string(x = "feature_id", y = "proportion", 
+                          group = "group", fill = "group"), 
+               position = position_dodge(width = 0.9), size = 3, shape = 1, 
+               alpha = 0.75)
   
-  if(!is.null(prop_samp)){
-    ggp <- ggp + 
-      geom_point(data = prop_samp, 
-                 aes_string(x = "feature_id", y = "proportion", 
-                            group = "group", fill = "group"), 
-                 position = position_dodge(width = 0.9), size = 3, shape = 23, 
-                 alpha = 0.75)
+  if(CI){
+    ggp = ggp +
+      geom_errorbar(data = prop_samp,
+                    aes_string(x = "feature_id", ymin = "LB", ymax = "UB",
+                               group = "group"), 
+                    position = position_dodge(width = 0.9), size = 0.5, 
+                    width = 0.5,
+                    alpha = 0.5)
   }
   
   ggp
+})
+
+setValidity("BANDITS_test", function(object){
+  # Has to return TRUE for a valid object!
+  if( !all( object@Transcript_results$Gene_id %in% object@Gene_results$Gene_id) ){
+    return("All genes appearing in @Transcript_results must also appear in @Gene_results")
+  }
+  
+  if( !all( object@Gene_results$Gene_id %in% object@Convergence$Gene_id) ){
+    return("All genes appearing in @Gene_results must also appear in @Convergence")
+  }
+  
+  return(TRUE)
 })

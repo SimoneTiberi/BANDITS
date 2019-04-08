@@ -8,7 +8,7 @@
 #' 
 #' 
 #' @param BANDITS_data a 'BANDITS_data' object.
-#' @param prior_precision a vector with the mean and standard deviation of the log-precision parameter.
+#' @param precision a vector with the mean and standard deviation of the log-precision parameter.
 #' @param samples_design a \code{data.frame} indicating the design of the experiment with one row for each sample:
 #' samples_design must contain a column with the sample id and one with the group id.
 #' Warning: the samples in samples_design must have the same order
@@ -134,7 +134,7 @@
 #' ## Test for DTU
 #' #set.seed(61217)
 #' #results = test_DTU(BANDITS_data = input_data,
-#' #             prior_precision = precision$prior,
+#' #             precision = precision$prior,
 #' #             samples_design = samples_design,
 #' #             R = 10^4, burn_in = 2*10^3, n_cores = 2,
 #' #             gene_to_transcript = gene_tr_id)
@@ -178,7 +178,7 @@
 #' @seealso \code{\link{create_data}}, \code{\linkS4class{BANDITS_data}}, \code{\linkS4class{BANDITS_test}}
 #' 
 #' @export
-test_DTU = function(BANDITS_data, prior_precision = NULL, R = 10^4, burn_in = 2*10^3,
+test_DTU = function(BANDITS_data, precision = NULL, R = 10^4, burn_in = 2*10^3,
                     samples_design, group_col_name = "group", n_cores = 1, 
                     gene_to_transcript, theshold_pval = 0.1){
   #########################################################################################################
@@ -195,7 +195,13 @@ test_DTU = function(BANDITS_data, prior_precision = NULL, R = 10^4, burn_in = 2*
   }
   
   if( !is(BANDITS_data, "BANDITS_data") ){
-    message("'BANDITS_data' must be a 'BANDITS_data' object created via the create_data function")
+    message("'BANDITS_data' must be a 'BANDITS_data' object created via 'create_data'")
+    return(NULL)
+  }
+  
+  # check that gene_to_transcript is a matrix or data.frame object
+  if( !is.data.frame(gene_to_transcript) & !is.matrix(gene_to_transcript)  ){
+    message("'gene_to_transcript' must be a matrix or data.frame")
     return(NULL)
   }
   
@@ -204,12 +210,16 @@ test_DTU = function(BANDITS_data, prior_precision = NULL, R = 10^4, burn_in = 2*
     return(NULL)
   }
   
-  if(is.null(prior_precision)){
+  if(is.null(precision)){
     mean_log_precision = 0
     sd_log_precision = 10
   }else{
-    mean_log_precision = prior_precision[1]
-    sd_log_precision   = prior_precision[2]
+    if( {!is.vector(precision)} | {length(precision) != 2} ){
+      message("'precision' must be a vector of length 2")
+      return(NULL)
+    }
+    mean_log_precision = precision[1]
+    sd_log_precision   = precision[2]
   }
   
   if( !is.data.frame(samples_design) ){
@@ -218,12 +228,13 @@ test_DTU = function(BANDITS_data, prior_precision = NULL, R = 10^4, burn_in = 2*
   }
   
   # select the column of samples_design which is called 'group_col_name'
-  sel_col = which(group_col_name == colnames(samples_design))
-  if( is.null(sel_col) ){
+  if( !(group_col_name %in% colnames(samples_design)) ){
     message("Column ", group_col_name, " missing in 'samples_design'")
     message("'group_col_name' should specify the column name of 'samples_design' containing the group id of each sample")
     return(NULL)
   }
+  
+  sel_col = which(group_col_name == colnames(samples_design))
   if( length(sel_col) > 1.5 ){
     message( length(sel_col) , " columns from 'samples_design' are called ", group_col_name)
     message("Remove duplicated columns from 'samples_design' and provide a unique column for the group id")
@@ -278,24 +289,23 @@ test_DTU = function(BANDITS_data, prior_precision = NULL, R = 10^4, burn_in = 2*
   #########################################################################################################
   # Parallelize ALL genes/groups at the same time.
   #########################################################################################################
-  if(n_cores > 1){ # if n_cores > 1 (parallel computing).
-    suppressWarnings({
-      cl <- makeCluster(n_cores);
-    })
-    registerDoParallel(cl, n_cores);
-  }
-  
+  # if n_cores > 1 (parallel computing).
+  suppressWarnings({
+    cl <- makeCluster(n_cores);
+  })
+  registerDoParallel(cl, n_cores);
+
   message("Starting the MCMC")
   
   p_values_ALL = foreach(p = final_order,
                          .packages=c("BANDITS"),
                          .errorhandling = "stop") %dorng%{
                            # ORDER counts to respect the ordering in "groups" via 'ord_samples'
-                           f = as.matrix(BANDITS_data@counts[[p]][,ord_samples])
+                           f = BANDITS_data@counts[[p]][,ord_samples]
                            sel_samples = colSums(f) > 0.5
                            
                            # select samples with data only:
-                           f = f[, sel_samples ]
+                           f = as.matrix( f[, sel_samples ] )
                            N1 = sum(sel_samples[seq_len(N[1])])
                            N2 = sum(sel_samples[N[1] + seq_len(N[2])])
                            
@@ -346,18 +356,18 @@ test_DTU = function(BANDITS_data, prior_precision = NULL, R = 10^4, burn_in = 2*
   p_values = do.call(rbind, p_values)
   
   gene_names = rownames(p_values)
-  # or simply:
-  # mean( rownames(p_values) == unlist( BANDITS_data@genes[final_order] ))
-  # 1, same!
-  
+
   suppressWarnings({ p_values = apply(p_values, 2, as.numeric) })
   rownames(p_values) = gene_names
+
+  SEL_ALL  = !is.na(p_values[,1])  # remove NA's (genes not converged).
+  p_values = p_values[SEL_ALL,]
+  
+  SEL_ALL  = p_values[,1] != -1  # remove -1's (genes not analyzed).
+  p_values = p_values[SEL_ALL,]
   
   # sort p.values according to their significance.
   p_values = p_values[ order(p_values[,1]), ]
-  
-  SEL_ALL  = (p_values[,1] != -1) | is.na(p_values[,1])  # remove -1's (genes not analyzed).
-  p_values = p_values[SEL_ALL,]
   
   # COMPUTE ADJUSTED P.VALS:
   adj.p_values    = p.adjust(p_values[,1], method = "BH") # gene-test
@@ -389,7 +399,23 @@ test_DTU = function(BANDITS_data, prior_precision = NULL, R = 10^4, burn_in = 2*
       return(NULL)
     }} ) )
   
-  p_values_tr = cbind(p_values_tr, mode_A, mode_B)
+  sd_A = unlist( lapply(p_values_ALL, function(x){
+    y = x[[1]]
+    if(length(y) > 1){
+      return(y[[5]])
+    }else{
+      return(NULL)
+    }} ) )
+  
+  sd_B = unlist( lapply(p_values_ALL, function(x){
+    y = x[[1]]
+    if(length(y) > 1){
+      return(y[[6]])
+    }else{
+      return(NULL)
+    }} ) )
+  
+  p_values_tr = cbind(p_values_tr, mode_A, mode_B, sd_A, sd_B)
   
   cond = !vapply(p_values_tr[,1], is.null, FUN.VALUE = logical(1))
   # sapply(p_values_tr[,1], is.null) == FALSE
@@ -413,12 +439,12 @@ test_DTU = function(BANDITS_data, prior_precision = NULL, R = 10^4, burn_in = 2*
   tr_DF = data.frame(Gene_id = genes_in_tr, Transcript_id = rownames(p_values_tr), 
                      p.values = p_values_tr[,1], adj.p.values = adj.p_values_tr,
                      Max_Gene_Tr.p.val = max_gene_tr_p.val, Max_Gene_Tr.Adj.p.val = max_gene_tr_adj.p.val,
-                     Mode_A = p_values_tr[,2], 
-                     Mode_B = p_values_tr[,3],
+                     p_values_tr[,2:5], 
                      row.names = NULL)
   
   # re-name the group names according to the groups names:
   names(tr_DF)[ seq(7,8) ] = paste("Mean", group_levels)
+  names(tr_DF)[ seq(9,10) ] = paste("sd", group_levels)
   
   # sort p.values according to their GENE significance (and secondly according to tr significance):
   tr_DF = tr_DF[ order(p_values[match(tr_DF$Gene_id, rownames(p_values)), 1], tr_DF$p.values) ,]
@@ -449,12 +475,16 @@ test_DTU = function(BANDITS_data, prior_precision = NULL, R = 10^4, burn_in = 2*
   #########################################################################################################
   message("Returning results")
   
+  # p_values[,1] contains the p.values
+  # p_values[,2] contains the inversion (0 or 1)
+  # p_values[,3] contains the DTU_measure
+  
   return(new("BANDITS_test",
              Gene_results = data.frame(Gene_id = rownames(p_values), 
                                        p.values = p_values[,1], adj.p.values = adj.p_values,
-                                       p.values_inverted = ifelse(p_values[,5], p_values[,1], sqrt(p_values[,1])),    # if NOT inverted, take sqrt(p.val)
-                                       adj.p.values_inverted = ifelse(p_values[,5], adj.p_values, sqrt(adj.p_values)), # if NOT inverted, take sqrt(adj.p.val)
-                                       DTU_measure = p_values[,7], # sum of top two differences of posterior modes between transcripts.
+                                       p.values_inverted = ifelse(p_values[,2], p_values[,1], sqrt(p_values[,1])),    # if NOT inverted, take sqrt(p.val)
+                                       adj.p.values_inverted = ifelse(p_values[,2], adj.p_values, sqrt(adj.p_values)), # if NOT inverted, take sqrt(adj.p.val)
+                                       DTU_measure = p_values[,3], # sum of top two differences of posterior modes between transcripts.
                                        row.names = NULL), 
              Transcript_results =  tr_DF,
              Convergence = data.frame(Gene_id = rownames(convergence),

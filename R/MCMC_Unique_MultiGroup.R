@@ -132,9 +132,10 @@ pval_compute_MultiGroup = function(mcmc, K, N_groups){
   # Random sample to decrease the correlation between w samples!
   
   # this returns a matrix: mode_groups[,1] represents the proportions of transcript 1 in all N_groups.
-  mode_groups = vapply(mcmc, function(x) apply(x, 2, sum), FUN.VALUE = numeric(K) ) 
+  mode_groups = vapply(mcmc, function(x) colSums(x), FUN.VALUE = numeric(K) ) 
   # sapply(mcmc, function(x) apply(x, 2, sum) ) # find.mode, adjust = 10 (mode) or sum (mean)
   mode_groups = apply( mode_groups, 2, function(x) x/sum(x))
+  sd_groups = vapply(mcmc, function(x) sqrt(diag(var(x))), FUN.VALUE = numeric(K) ) 
   
   # need to remove 1 parameter to make sure I don't test it twice!
   p = (N_groups-1)*(K-1) # degrees of freedom for the Chisq.
@@ -158,7 +159,7 @@ pval_compute_MultiGroup = function(mcmc, K, N_groups){
   }
   
   if(K == 2){ # if there are only 
-    return(list(mean(p_value), rep(mean(p_value), K), mode_groups))
+    return(list(mean(p_value), rep(mean(p_value), K), mode_groups, sd_groups))
   }
   
   # transcript level test
@@ -179,5 +180,5 @@ pval_compute_MultiGroup = function(mcmc, K, N_groups){
     }
   }
   
-  list( mean(p_value), colMeans(trancript_res), mode_groups )
+  list( mean(p_value), colMeans(trancript_res), mode_groups, sd_groups )
 }

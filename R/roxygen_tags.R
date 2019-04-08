@@ -30,6 +30,7 @@
 #' @importFrom ggplot2 xlab
 #' @importFrom ggplot2 ylab
 #' @importFrom ggplot2 geom_point
+#' @importFrom ggplot2 geom_errorbar
 #' @importFrom graphics curve
 #' @importFrom graphics hist
 #' @importFrom stats ar
@@ -42,6 +43,8 @@
 #' @importFrom stats p.adjust
 #' @importFrom stats pchisq
 #' @importFrom stats residuals
-#' @importFrom stats sd
 #' @importFrom stats window
+#' @importFrom stats qnorm
+#' @importFrom stats sd
+#' @importFrom stats var
 NULL

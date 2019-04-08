@@ -73,6 +73,33 @@
 prior_precision = function(gene_to_transcript, transcript_counts,
                            min_transcript_proportion = 0.01, min_transcript_counts = 1, 
                            min_gene_counts = 10, n_cores = 1){
+  # check that gene_to_transcript is a matrix or data.frame object
+  if( !is.data.frame(gene_to_transcript) & !is.matrix(gene_to_transcript)  ){
+    message("'gene_to_transcript' must be a matrix or data.frame")
+    return(NULL)
+  }
+  
+  if( ncol(gene_to_transcript) != 2 ){
+    message("'gene_to_transcript' must be a 2 column matrix or data.frame")
+    return(NULL)
+  }
+  
+  # check that transcript_counts is a matrix or data.frame object
+  if( !is.data.frame(transcript_counts) & !is.matrix(transcript_counts) ){
+    message("'transcript_counts' must be a matrix or data.frame")
+    return(NULL)
+  }
+  
+  if( !all( rownames(transcript_counts) %in% gene_to_transcript[,2])  ){
+    message("All transcript names in 'rownames(transcript_counts)' must be in 'gene_to_transcript[,2]'")
+    return(NULL)
+  }
+  
+  if( !all(dim(transcript_counts) > 0.5) ){
+    message("'transcript_counts' must have at least 1 row (transcripts) and 1 column (samples)")
+    return(NULL)
+  }
+  
   N = ncol(transcript_counts)
   
   matches = match( rownames(transcript_counts), gene_to_transcript[,2] )
@@ -168,6 +195,16 @@ prior_precision = function(gene_to_transcript, transcript_counts,
 #' 
 #' @export
 plot_precision = function(prior){
+  if( !is.list(prior) ){
+    message("'prior' must be a list of length 2, created via 'prior_precision'")
+    return(NULL)
+  }
+
+  if( length(prior) != 2 ){
+    message("'prior' must be a list of length 2, created via 'prior_precision'")
+    return(NULL)
+  }
+  
   hist( prior[[2]], main = "Log-prior precision estimates", 
         xlab = "log-prior", freq = FALSE)
   curve(dnorm(x, prior[[1]][1], prior[[1]][2]), add = TRUE, lwd = 3)

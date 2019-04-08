@@ -21,7 +21,7 @@ To install the latest development version of the package from github, use `devto
 devtools::install_github("SimoneTiberi/BANDITS")
 ```
 
-To install the package jointly with its vignette use \code{build_vignettes = TRUE}:
+To install the package jointly with its vignette use `build_vignettes = TRUE`:
 ``` r
 devtools::install_github("SimoneTiberi/BANDITS", build_vignettes = TRUE)
 ```
@@ -98,7 +98,7 @@ STAR --runMode alignReads --runThreadN 4 --genomeDir $GDIR \
 --readFilesIn <(zcat $fastq_files/SRR1039508_R1.fastq.gz) <(zcat $fastq_files/SRR1039508_R2.fastq.gz) \
 --outFileNamePrefix sample1 --outSAMtype BAM SortedByCoordinate --quantMode TranscriptomeSAM
 ```
-When running STAR \code{--quantMode TranscriptomeSAM} is essential to obtain the transcript alignments.
+When running STAR `--quantMode TranscriptomeSAM` is essential to obtain the transcript alignments.
 
 Use gffread to build a reference transcriptome (fasta format) compatible with the DNA fasta and gtf files used for STAR:
 ``` bash
@@ -110,7 +110,7 @@ Use salmon on the transcript alignments to compute the equivalence classes:
 ``` bash
 salmon quant -t $cdna -l A -a sample1Aligned.toTranscriptome.out.bam -o sample1 -p 4 --dumpEq
 ```
-The option \code{--dumpEq} is essential to obtain the equivalence classes from salmon.
+The option `--dumpEq` is essential to obtain the equivalence classes from salmon.
 
 
 ## Align reads to the transcriptome with salmon
@@ -143,4 +143,4 @@ Align reads and quantify transcript abundance with salmon:
 salmon quant -i $idx -l A -1 $fastq_files/SRR1039508_R1.fastq.gz -2 $fastq_files/SRR1039508_R2.fastq.gz \
 -p 4 -o $out_Salmon/sample1 --seqBias --gcBias --dumpEq
 ```
-The option \code{--dumpEq} is essential to obtain the equivalence classes from salmon.
+The option `--dumpEq` is essential to obtain the equivalence classes from salmon.
