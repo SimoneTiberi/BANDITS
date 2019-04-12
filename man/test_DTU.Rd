@@ -70,12 +70,16 @@ input_data = filter_genes(input_data, min_counts_per_gene = 20)
 data(precision, package = "BANDITS")
 
 ## Test for DTU
-set.seed(61217)
-results = test_DTU(BANDITS_data = input_data,
-             precision = precision$prior,
-             samples_design = samples_design,
-             R = 10^4, burn_in = 2*10^3, n_cores = 2,
-             gene_to_transcript = gene_tr_id)
+# set.seed(61217)
+# results = test_DTU(BANDITS_data = input_data,
+#             precision = precision$prior,
+#             samples_design = samples_design,
+#             R = 10^4, burn_in = 2*10^3, n_cores = 2,
+#             gene_to_transcript = gene_tr_id)
+
+# load the pre-computed results:
+data(results, package = "BANDITS")
+
 results
 
 }
