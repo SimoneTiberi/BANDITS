@@ -37,10 +37,14 @@
 #' # Use the same filtering criteria as in filter_transcripts; 
 #' # if transcript pre-filtering is not performed, set min_transcript_proportion,
 #' # min_transcript_counts and min_gene_counts to 0.
-#' set.seed(61217)
-#' precision = prior_precision(gene_to_transcript = gene_tr_id, transcript_counts = counts,
-#'                        min_transcript_proportion = 0.01, min_transcript_counts = 10,
-#'                        min_gene_counts = 20, n_cores = 2)
+#' #set.seed(61217)
+#' #precision = prior_precision(gene_to_transcript = gene_tr_id, transcript_counts = counts,
+#' #                       min_transcript_proportion = 0.01, min_transcript_counts = 10,
+#' #                       min_gene_counts = 20, n_cores = 2)
+#'
+#' # load the pre-computed precision estimates:
+#' data(precision, package = "BANDITS")
+#' 
 #' precision$prior
 #' head(precision$genewise_log_precision)
 #' 
