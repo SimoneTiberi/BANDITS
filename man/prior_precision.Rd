@@ -37,54 +37,33 @@ The function computes the genewise estimates for the precision via \code{DRIMSeq
 and calculates the mean and standard deviation of the log-precision estimates.
 }
 \examples{
-## Preliminary information
-
 # specify the directory of the internal data:
 data_dir = system.file("extdata", package = "BANDITS")
-data_dir
 
 # load gene_to_transcript matching:
 data("gene_tr_id", package = "BANDITS")
-# gene_tr_id contains transcripts ids on the first column
-# and the corresponding gene ids on the second column:
-head(gene_tr_id)
-
-# Specify the directory of the transcript level estimated counts.
-sample_names = paste0("sample", seq_len(4))
-quant_files = file.path(data_dir, sample_names, "quant.sf")
-file.exists(quant_files)
 
 # Load the transcript level estimated counts via tximport:
 library(tximport)
+quant_files = file.path(data_dir, paste0("sample", seq_len(4)), "quant.sf")
 txi = tximport(files = quant_files, type = "salmon", txOut = TRUE)
 counts = txi$counts
-head(counts)
 
-
-
-## Optional (recommended): infer an informative prior for the precision parameter
-
-# Use the same filtering criteria as in \\code{\\link{filter_transcripts}}; 
-# if transcript pre-filtering is not performed, set \\code{min_transcript_proportion},
-# \\code{min_transcript_counts} and \\code{min_gene_counts} to 0.
-
-#set.seed(61217)
-#precision = prior_precision(gene_to_transcript = gene_tr_id, transcript_counts = counts,
-#                       min_transcript_proportion = 0.01, min_transcript_counts = 10,
-#                       min_gene_counts = 20, n_cores = 2)
-
-# load the pre-computes precision estimates:
-data(precision, package = "BANDITS")
-
-# Plot the histogram of the genewise log-precision estimates.
-# The black solid line represents the normally distributed prior distribution 
-# for the log-precision parameter.
-plot_precision(precision)
+# Infer an informative prior for the precision parameter
+# Use the same filtering criteria as in filter_transcripts; 
+# if transcript pre-filtering is not performed, set min_transcript_proportion,
+# min_transcript_counts and min_gene_counts to 0.
+set.seed(61217)
+precision = prior_precision(gene_to_transcript = gene_tr_id, transcript_counts = counts,
+                       min_transcript_proportion = 0.01, min_transcript_counts = 10,
+                       min_gene_counts = 20, n_cores = 2)
+precision$prior
+head(precision$genewise_log_precision)
 
 }
 \seealso{
 \code{\link{test_DTU}}, \code{\link{plot_precision}}
 }
 \author{
-Simone Tiberi
+Simone Tiberi \email{simone.tiberi@uzh.ch}
 }

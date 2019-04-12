@@ -4,16 +4,11 @@
 #' @name input_data
 #' @aliases input_data
 #' 
-#' @param input_data a \code{\linkS4class{BANDITS_data}} object.
+#' @param input_data a \code{\linkS4class{BANDITS_data}} object, generated via \code{\link{create_data}}. 
 #
 #' @examples
-#' # Computed as shown in the vignettes, see: browseVignettes("BANDITS")
-#' 
-#' # create data and filter internally lowly abundant transcripts:
-#' #input_data = create_data(gene_to_transcript = gene_tr_id,
-#' #                           path_to_eq_classes = equiv_classes_files, eff_len = eff_len, 
-#' #                           n_cores = 2,
-#' #                           transcripts_to_keep = transcripts_to_keep)
+#' # Object 'input_data' is generated via 'create_data' as shown in the vignettes:
+#' # see browseVignettes("BANDITS").
 #' 
 #' # load the pre-computed data:
 #' data("input_data", package = "BANDITS")

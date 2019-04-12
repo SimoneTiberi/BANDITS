@@ -46,9 +46,9 @@ MCMC_chain_MultiGroup = function(f, l, exon_id, N, N_groups, R, K, burn_in, mean
   N_tot = sum(N)
   cumulative = c(0,cumsum(N))
   splits = list()
-  for(i in seq(2, length(cumulative), by = 1) ){
-    splits[[i-1]] = {cumulative[i-1]+1}:cumulative[i]
-  }
+  splits = lapply(seq_len( length(cumulative) - 1), function(i){
+    {cumulative[i]+1}:cumulative[i+1]
+  })
   
   # define object containing the data:
   f_list = list()
@@ -141,9 +141,9 @@ pval_compute_MultiGroup = function(mcmc, K, N_groups){
   p = (N_groups-1)*(K-1) # degrees of freedom for the Chisq.
   
   # gene level test:
-  p_value = matrix(NA, nrow = N_groups, ncol = K)
-  for(g in seq_len(N_groups) ){ # baseline group to compare against
-    for(k in seq_len(K) ){ # transcript to be removed
+  p_value = vapply(seq_len(N_groups), FUN = function(g, mcmc){
+    vapply(seq_len(K), FUN = function(k, mcmc){
+      
       A = B = c()
       for(g_2 in {seq_len(N_groups)}[-g]){ # baseline group to compare against
         A = cbind(A, mcmc[[g_2]][,-k])
@@ -154,18 +154,18 @@ pval_compute_MultiGroup = function(mcmc, K, N_groups){
       
       # Normal (classical Wald test)
       stat = t(mode) %*% ginv(CV, tol = 0) %*% mode
-      p_value[g,k] = 1-pchisq(stat, df = p)
-    }
-  }
+      1-pchisq(stat, df = p)
+    }, mcmc = mcmc, FUN.VALUE = numeric(1))
+    
+  },mcmc = mcmc, FUN.VALUE = numeric(K))
   
   if(K == 2){ # if there are only 
     return(list(mean(p_value), rep(mean(p_value), K), mode_groups, sd_groups))
   }
   
-  # transcript level test
-  trancript_res = matrix(NA, nrow = N_groups, ncol = K)
-  for(g in seq_len(N_groups) ){ # baseline group to compare against
-    for(k in seq_len(K) ){ # transcript to be TESTED!
+  trancript_res = vapply(seq_len(N_groups), FUN = function(g, mcmc){
+    vapply(seq_len(K), FUN = function(k, mcmc){
+      
       A = B = c()
       for(g_2 in {seq_len(N_groups)}[-g]){ # baseline group to compare against
         A = cbind(A, mcmc[[g_2]][,k])
@@ -176,9 +176,10 @@ pval_compute_MultiGroup = function(mcmc, K, N_groups){
       
       # Normal (classical Wald test)
       stat = t(mode) %*% ginv(CV, tol = 0) %*% mode
-      trancript_res[g,k] = 1-pchisq(stat, df = N_groups-1)
-    }
-  }
+      1-pchisq(stat, df = N_groups-1)
+    }, mcmc = mcmc, FUN.VALUE = numeric(1))
+    
+  },mcmc = mcmc, FUN.VALUE = numeric(K))
   
-  list( mean(p_value), colMeans(trancript_res), mode_groups, sd_groups )
+  list( mean(p_value), rowMeans(trancript_res), mode_groups, sd_groups )
 }

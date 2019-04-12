@@ -58,7 +58,7 @@ MCMC_chain_FULL = function(f, l, exon_id, N_1, N_2, R, K, burn_in, mean_log_prec
     }
   }else{ # IF not converged, RUN a second chain (once only):
     if(FIRST_chain < 3){ # if first or second chain re-run again:
-      print("the first chain did NOT converge, I run a second one:")
+      # message("the first chain did NOT converge, I run a second one:")
       return( MCMC_chain_FULL(f, l, exon_id, N_1, N_2, R, K, burn_in, mean_log_precision, sd_log_precision, FIRST_chain = FIRST_chain + 1) )
     }else{ # if I ran 3 chains already and none of them converged, return convergence failure message:
       return(list(NaN, convergence, FIRST_chain))

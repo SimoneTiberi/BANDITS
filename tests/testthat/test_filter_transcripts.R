@@ -16,7 +16,6 @@ test_that("filter_transcripts() works faultlessly.", {
   # transcript D has 8 counts, it will be removed (min_transcript_counts = 10)
   # only transcripts E and F respect the requirements
 
-#  expect_is(transcripts_to_keep, "vector")
   expect_is(transcripts_to_keep, "character")
   expect_true(all(transcripts_to_keep %in% rownames(counts)))
   expect_true(all(transcripts_to_keep %in% gene_tr_id[,2]))

@@ -10,12 +10,9 @@
 #' @examples
 #' # specify the directory of the internal data:
 #' data_dir = system.file("extdata", package = "BANDITS")
-#' data_dir
 #' 
 #' # Specify the directory of the transcript level estimated counts.
-#' sample_names = paste0("sample", seq_len(4))
-#' quant_files = file.path(data_dir, sample_names, "quant.sf")
-#' file.exists(quant_files)
+#' quant_files = file.path(data_dir, paste0("sample", seq_len(4)), "quant.sf")
 #' 
 #' # Load the transcript level estimated counts via tximport:
 #' library(tximport)
@@ -23,6 +20,7 @@
 #' 
 #' # compute the Median estimated effective length for each transcript:
 #' eff_len = eff_len_compute(x_eff_len = txi$length)
+#' head(eff_len)
 #' 
 #' @author Simone Tiberi \email{simone.tiberi@uzh.ch}
 #'  

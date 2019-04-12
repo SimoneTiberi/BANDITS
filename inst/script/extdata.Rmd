@@ -1,0 +1,88 @@
+---
+title: "External data"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Fasta file
+The file `Homo_sapiens.GRCh38.cdna.all.1.1.10M.fa.gz` was downloaded from the *ARMOR* repository at [https://github.com/csoneson/ARMOR/blob/master/example_data/reference/Ensembl.GRCh38.93/Homo_sapiens.GRCh38.cdna.all.1.1.10M.fa.gz](https://github.com/csoneson/ARMOR/blob/master/example_data/reference/Ensembl.GRCh38.93/Homo_sapiens.GRCh38.cdna.all.1.1.10M.fa.gz).
+
+# Equivalence classes and transcript estimated counts
+The equivalence classes (`eq_classes.txt`) and transcript estimated counts (`quant.sf`) were obtained by aligning the paired-ended reads from the *ARMOR* repository with *STAR* and checking the transcripts compatible with each alignment via *salmon*.
+
+The reads were downloaded from [https://github.com/csoneson/ARMOR/tree/master/example_data/FASTQ](https://github.com/csoneson/ARMOR/tree/master/example_data/FASTQ).
+
+``` bash
+# Download the ARMOR github repository
+git clone https://github.com/csoneson/ARMOR.git
+
+# set the base_dir to the downloaded repo:
+base_dir="~/ARMOR-master"
+
+# input reads:
+fastq_files=$base_dir/example_data/FASTQ
+
+#################################################################################################################
+# RUN STAR alignment and Salmon on the alignment obtained from STAR:
+#################################################################################################################
+# fasta file, reference genome (DNA)
+fasta=$base_dir/example_data/reference/Ensembl.GRCh38.93/Homo_sapiens.GRCh38.dna.chromosome.1.1.10M.fa
+
+# gtf file
+gtf=$base_dir/example_data/reference/Ensembl.GRCh38.93/Homo_sapiens.GRCh38.93.1.1.10M.gtf
+
+# make directory for STAR output:
+mkdir $base_dir/STAR
+
+# folder where we will create a genome index:
+mkdir $base_dir/STAR/genome_index
+GDIR=$base_dir/STAR/genome_index
+
+# Generate Genome index:
+STAR --runMode genomeGenerate --runThreadN 4 --genomeDir $GDIR  \
+	   --genomeFastaFiles $fasta --sjdbGTFfile $gtf --sjdbOverhang 62
+ls $GDIR
+# sjdbOverhang ideally should be the lenght of the reads -1 (our reads are 63 bps).
+
+# output directory
+mkdir $base_dir/STAR/alignment
+outDir=$base_dir/STAR/alignment
+
+# change directory to the output directory:
+cd $outDir
+
+# align reads with STAR:
+# --quantMode TranscriptomeSAM is essential to obtain the transcript alignments.
+STAR --runMode alignReads --runThreadN 4 --genomeDir $GDIR \
+--readFilesIn <(zcat $fastq_files/SRR1039508_R1.fastq.gz) <(zcat $fastq_files/SRR1039508_R2.fastq.gz) \
+--outFileNamePrefix sample1 --outSAMtype BAM SortedByCoordinate --quantMode TranscriptomeSAM
+
+STAR --runMode alignReads --runThreadN 4 --genomeDir $GDIR \
+--readFilesIn <(zcat $fastq_files/SRR1039509_R1.fastq.gz) <(zcat $fastq_files/SRR1039509_R2.fastq.gz) \
+--outFileNamePrefix sample2 --outSAMtype BAM SortedByCoordinate --quantMode TranscriptomeSAM
+
+STAR --runMode alignReads --runThreadN 4 --genomeDir $GDIR \
+--readFilesIn <(zcat $fastq_files/SRR1039512_R1.fastq.gz) <(zcat $fastq_files/SRR1039512_R2.fastq.gz) \
+--outFileNamePrefix sample3 --outSAMtype BAM SortedByCoordinate --quantMode TranscriptomeSAM
+
+STAR --runMode alignReads --runThreadN 4 --genomeDir $GDIR \
+--readFilesIn <(zcat $fastq_files/SRR1039513_R1.fastq.gz) <(zcat $fastq_files/SRR1039513_R2.fastq.gz) \
+--outFileNamePrefix sample4 --outSAMtype BAM SortedByCoordinate --quantMode TranscriptomeSAM
+
+# use gffread to build a reference transcriptome (fasta format) compatible with the DNA fasta and gtf files used for STAR:
+gffread -w cDNA.fa -g $fasta $gtf
+
+# crete a variable to point at the newly created transcriptome fasta file:
+cdna=$outDir/cDNA.fa
+
+# Use salmon on the transcript alignments to compute the equivalence classes:
+# --dumpEq is essential to obtain the equivalence classes from salmon.
+$salmon quant -t $cdna -l A -a sample1Aligned.toTranscriptome.out.bam -o sample1 -p 4 --dumpEq
+$salmon quant -t $cdna -l A -a sample2Aligned.toTranscriptome.out.bam -o sample2 -p 4 --dumpEq
+$salmon quant -t $cdna -l A -a sample3Aligned.toTranscriptome.out.bam -o sample3 -p 4 --dumpEq
+$salmon quant -t $cdna -l A -a sample4Aligned.toTranscriptome.out.bam -o sample4 -p 4 --dumpEq
+```
+

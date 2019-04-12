@@ -6,7 +6,6 @@ test_that("eff_len_compute() works faultlessly.", {
   
   eff_len = eff_len_compute(x_eff_len = len)
 
-#  expect_is(eff_len, "vector")
   expect_is(eff_len, "numeric")
   expect_true(all(names(eff_len) %in% rownames(len)))
   expect_true(length(eff_len) == nrow(len) )

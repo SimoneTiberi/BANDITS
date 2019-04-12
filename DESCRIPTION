@@ -1,13 +1,12 @@
 Package: BANDITS
 Type: Package
 Title: BANDITS: Bayesian ANalysis of DIfferenTial Splicing
-Version: 0.99.14
+Version: 0.99.0
 Date: 2019-02-19
-Author: Simone Tiberi
+Author: Simone Tiberi and Mark D. Robinson
 Maintainer: Simone Tiberi <simone.tiberi@uzh.ch>
 Description: BANDITS is a Bayesian hierarchical model for detecting differential splicing of genes and transcripts,
-  via differential transcript usage (DTU), 
-  between two or more conditions.
+  via differential transcript usage (DTU), between two or more conditions.
   The method uses a Bayesian hierarchical framework, which allows for sample specific proportions
   in a Dirichlet-Multinomial model, and samples the allocation of fragments to the transcripts.
   Parameters are inferred via Markov chain Monte Carlo (MCMC) techniques and a DTU test is performed 
@@ -21,10 +20,10 @@ Imports: Rcpp, doRNG, MASS, data.table, doParallel, parallel, foreach, methods, 
   DRIMSeq, BiocParallel
 LinkingTo: Rcpp, RcppArmadillo
 Suggests: knitr, rmarkdown, testthat,
-  tximport, BiocStyle
+  tximport, BiocStyle, GenomicFeatures, Biostrings
 SystemRequirements: C++11
 VignetteBuilder: knitr
 RoxygenNote: 6.1.1
-LazyData: true
 ByteCompile: true
 URL: https://github.com/SimoneTiberi/BANDITS
+BugReports: https://github.com/SimoneTiberi/BANDITS/issues

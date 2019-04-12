@@ -25,8 +25,9 @@ my_heidel.diag = function(x, R, by., pvalue = 0.01){
     Bsq <- (B * B)/(n * S0)
     I <- sum(Bsq)/n
     p = my_pcramer(I)
-    if(converged <- !is.na(I) && p < 1 - pvalue) 
+    if(converged <- !is.na(I) && p < 1 - pvalue){
       break
+    }
   }
   
   if( !converged || is.na(I) ) {
@@ -74,11 +75,14 @@ char_in_char = function(a, b){
   len_b = nchar(b)
   
   # s represents the start of the sub-string of b
-  for(s in seq_len(len_b - len_a + 1) ){
-    if( a == substring(b, s, s+len_a-1) ){
-      return(TRUE)
-    }
-  }
+  #for(s in seq_len(len_b - len_a + 1) ){
+  #  if( a == substring(b, s, s+len_a-1) ){
+  #    return(TRUE)
+  #  }
+  #}
+  res = vapply( seq_len(len_b - len_a + 1), function(s){
+    a == substring(b, s, s+len_a-1)
+  }, FUN.VALUE = logical(1))
   
-  FALSE
+  any(res)
 }

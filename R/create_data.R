@@ -18,59 +18,39 @@
 #' 
 #' @return A \code{\linkS4class{BANDITS_data}} object.
 #' @examples
-#' ## Preliminary information
-#' 
 #' # specify the directory of the internal data:
 #' data_dir = system.file("extdata", package = "BANDITS")
-#' data_dir
 #' 
 #' # load gene_to_transcript matching:
 #' data("gene_tr_id", package = "BANDITS")
-#' # gene_tr_id contains transcripts ids on the first column
-#' # and the corresponding gene ids on the second column:
-#' head(gene_tr_id)
 #' 
 #' # Specify the directory of the transcript level estimated counts.
 #' sample_names = paste0("sample", seq_len(4))
 #' quant_files = file.path(data_dir, sample_names, "quant.sf")
-#' file.exists(quant_files)
 #' 
 #' # Load the transcript level estimated counts via tximport:
 #' library(tximport)
 #' txi = tximport(files = quant_files, type = "salmon", txOut = TRUE)
 #' counts = txi$counts
-#' head(counts)
 #' 
-#' 
-#' 
-#' ## Optional (recommended): transcript pre-filtering
-#' 
+#' # Optional (recommended): transcript pre-filtering
 #' transcripts_to_keep = filter_transcripts(gene_to_transcript = gene_tr_id,
 #'                                          transcript_counts = counts,
 #'                                          min_transcript_proportion = 0.01,
 #'                                          min_transcript_counts = 10,
 #'                                          min_gene_counts = 20)
-#' head(transcripts_to_keep)
-#' 
-#' 
-#' 
-#' ## Load the data:
 #' 
 #' # compute the Median estimated effective length for each transcript:
 #' eff_len = eff_len_compute(x_eff_len = txi$length)
 #' 
 #' # specify the path to the equivalence classes:
 #' equiv_classes_files = file.path(data_dir, sample_names, "aux_info", "eq_classes.txt")
-#' file.exists(equiv_classes_files)
 #' 
 #' # create data and filter internally lowly abundant transcripts:
-#' #input_data = create_data(gene_to_transcript = gene_tr_id,
-#' #                           path_to_eq_classes = equiv_classes_files, eff_len = eff_len, 
-#' #                           n_cores = 2,
-#' #                           transcripts_to_keep = transcripts_to_keep)
-#' 
-#' # load the pre-computed data:
-#' data("input_data", package = "BANDITS")
+#' input_data = create_data(gene_to_transcript = gene_tr_id,
+#'                            path_to_eq_classes = equiv_classes_files, eff_len = eff_len, 
+#'                            n_cores = 2,
+#'                            transcripts_to_keep = transcripts_to_keep)
 #' input_data
 #' 
 #' @author Simone Tiberi \email{simone.tiberi@uzh.ch}
@@ -299,7 +279,7 @@ create_data = function(gene_to_transcript,
   
   ######################################################################################################
   genes_in_classes_vector_Together = vapply( genes_in_classes_Together, paste, collapse = sep, FUN.VALUE = character(1) )
-    # sapply( genes_in_classes_Together, paste, collapse = sep )
+  # sapply( genes_in_classes_Together, paste, collapse = sep )
   names( genes_in_classes_vector_Together ) = genes_in_classes_vector_Together
   
   classes_split_per_gene_Together = split( all_classes_vector_Together,
@@ -311,7 +291,7 @@ create_data = function(gene_to_transcript,
   # I look for what classes each gene appers in and record whether it happears uniquely or not.
   genes_in_classes_split_per_gene_Together = strsplit(names(classes_split_per_gene_Together), split = sep, fixed = TRUE )
   n_genes = vapply(genes_in_classes_split_per_gene_Together, length, FUN.VALUE = integer(1))
-    # sapply(genes_in_classes_split_per_gene_Together, length)
+  # sapply(genes_in_classes_split_per_gene_Together, length)
   
   ######################################################################################################
   # I make group of genes to be modelled together and make a correspondance with the classes in classes_split_per_gene_Together
@@ -325,7 +305,7 @@ create_data = function(gene_to_transcript,
     if(genes_SELECTED_Together[i] %in% genes_included == FALSE){
       g_id = g_id + 1 # I create a new group of genes.
       classes_associated_to_GROUPs[[g_id]] = which( vapply(genes_in_classes_split_per_gene_Together, function(x){ genes_SELECTED_Together[i] %in% x}, FUN.VALUE = logical(1)) )
-        # which( sapply(genes_in_classes_split_per_gene_Together, function(x){ genes_SELECTED_Together[i] %in% x}) )
+      # which( sapply(genes_in_classes_split_per_gene_Together, function(x){ genes_SELECTED_Together[i] %in% x}) )
       GROUPs_of_genes[[g_id]] = unique( unlist(genes_in_classes_split_per_gene_Together[classes_associated_to_GROUPs[[g_id]]]) ) # Genes associated to i-th gene
       j = 1
       genes_included = c(genes_included, genes_SELECTED_Together[i])
@@ -349,7 +329,7 @@ create_data = function(gene_to_transcript,
   # check if a Group has too many genes and split it START:
   ######################################################################################################
   n_genes_per_group = vapply(GROUPs_of_genes, length, FUN.VALUE = integer(1))
-    # sapply(GROUPs_of_genes, length)
+  # sapply(GROUPs_of_genes, length)
   bigGroup = which( n_genes_per_group > max_genes_per_group)
   if(length(bigGroup) > 0){ # if at least 1 group to be split
     for(p in bigGroup){
@@ -368,14 +348,14 @@ create_data = function(gene_to_transcript,
       
       classes_tmp = classes_split_per_gene_Together[classes_bigGroup]
       Ngenes = vapply(genes_in_classes_split_per_gene_Together[classes_bigGroup], length, FUN.VALUE = integer(1))
-        # sapply(genes_in_classes_split_per_gene_Together[classes_bigGroup], length)
+      # sapply(genes_in_classes_split_per_gene_Together[classes_bigGroup], length)
       Class  = rep(classes_tmp, Ngenes)
       Counts = rep(counts_split_per_gene_Together[classes_bigGroup], vapply(genes_in_classes_split_per_gene_Together[classes_bigGroup], length, FUN.VALUE = integer(1)))
-                   # sapply(genes_in_classes_split_per_gene_Together[classes_bigGroup], length))
+      # sapply(genes_in_classes_split_per_gene_Together[classes_bigGroup], length))
       
       class = do.call(c, Class)
       gene = rep(Gene, vapply(Class, length, FUN.VALUE = integer(1)) )
-       # sapply(Class, length) )
+      # sapply(Class, length) )
       counts = do.call(rbind, Counts)
       
       # Split counts and classes by their gene name.
@@ -443,7 +423,7 @@ create_data = function(gene_to_transcript,
       ################################################################################################
       Transcripts_per_gene_bigGroup   = lapply(classes_split_bigGroup_Unique, function(x){ unique(unlist(x)) })
       N_transcripts_per_gene_bigGroup = vapply(Transcripts_per_gene_bigGroup, length, FUN.VALUE = integer(1))
-        # sapply(Transcripts_per_gene_bigGroup, length)
+      # sapply(Transcripts_per_gene_bigGroup, length)
       
       N_genes_Unique_bigGroup = length(classes_split_bigGroup_Unique);
       
@@ -483,16 +463,20 @@ create_data = function(gene_to_transcript,
   # I now need to select the classes and counts associated to each "group" of genes
   # Then "unlist" the classes and counts of each group: turn them into a single class and cont matrix.
   counts_ALL_together_per_GROUP = lapply(classes_associated_to_GROUPs, function(x){
-    res = counts_split_per_gene_Together[[x[1]]]
+    do.call(rbind, counts_split_per_gene_Together[x])
+  })
+  #counts_ALL_together_per_GROUP = lapply(classes_associated_to_GROUPs, function(x){
+    #res = counts_split_per_gene_Together[[x[1]]]
     # loop only IF length(x) > 1 !!!
     # otherwise it'll create a new record, identical to the previous one
-    if(length(x) > 1){
-      for(i in 2:length(x)){
-        res = rbind(res, counts_split_per_gene_Together[[x[i]]])
-      }
-    }
-    res
-  })
+    #if(length(x) > 1){
+    #  for(i in 2:length(x)){
+    #    res = rbind(res, counts_split_per_gene_Together[[x[i]]])
+    #  }
+    #  # try to replace the for loop with: do.call(rbind, counts_split_per_gene_Together[x])
+    #}
+    #res
+  #})
   
   classes_ALL_together_per_GROUP = lapply(classes_associated_to_GROUPs, function(x){
     res = list()
@@ -507,7 +491,7 @@ create_data = function(gene_to_transcript,
   # and make a matrix of 0, 1 indicating, for each class, what transcripts they have.
   Transcripts_per_GROUP = lapply(classes_ALL_together_per_GROUP, function(x){ unique(unlist(x)) })
   N_transcripts_per_GROUP = vapply(Transcripts_per_GROUP, length, FUN.VALUE = integer(1))
-    # sapply(Transcripts_per_GROUP, length)
+  # sapply(Transcripts_per_GROUP, length)
   
   # since classes_ALL_together_per_GROUP[[i]] has a list per gene, 
   # and then each classes_ALL_together_per_GROUP[[i]][[j]][[1]] has a list per equiv class
@@ -574,7 +558,7 @@ create_data = function(gene_to_transcript,
   ######################################################################################################
   # Filter Unique genes:
   K = vapply(eff_len_tr_Unique, length, FUN.VALUE = integer(1))
-    # sapply(eff_len_tr_Unique, length)
+  # sapply(eff_len_tr_Unique, length)
   SEL_tr = K > 1
   genes_SELECTED_Unique        = genes_SELECTED_Unique[SEL_tr]
   Transcripts_per_gene_Unique  = Transcripts_per_gene_Unique[SEL_tr]

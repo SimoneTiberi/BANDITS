@@ -77,9 +77,9 @@ MCMC_chain_MultiGroup_Together = function(f, l, exon_id, N, N_groups, n_genes, R
   N_tot = sum(N)
   cumulative = c(0,cumsum(N))
   splits = list()
-  for(i in seq(2, length(cumulative), by = 1) ){
-    splits[[i-1]] = {cumulative[i-1]+1}:cumulative[i]
-  }
+  splits = lapply(seq_len( length(cumulative) - 1), function(i){
+    {cumulative[i]+1}:cumulative[i+1]
+  })
   
   # define object containing the data:
   f_list = list()

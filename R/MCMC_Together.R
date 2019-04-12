@@ -129,9 +129,6 @@ MCMC_chain_Together_FULL = function(f, l, exon_id, N_1, N_2, R, K, gene_id, burn
               K, l, f, exon_id, 
               One_transcript, one_transcript)
   
-  # generalize for N_1 !+ N_2 and see if the performance of the two methods actually differs!
-  # If not, just provide one.
-  
   seq. = round( seq.int(1, R, length.out = 10^4 ) ) # thin if R > 10^4 (by construction R >= 10^4)
   convergence = my_heidel.diag(res[[3]][seq.], R = length(seq.), by. = length(seq.)/10, pvalue = 0.01)
   
@@ -160,7 +157,7 @@ MCMC_chain_Together_FULL = function(f, l, exon_id, N_1, N_2, R, K, gene_id, burn
     }
   }else{ # IF not converged, RUN a second chain (once only):
     if(FIRST_chain < 3){ # if first or second chain re-run again:
-      print("the first chain did NOT converge, I run a second one:")
+      # message("the first chain did NOT converge, I run a second one:")
       return( MCMC_chain_Together_FULL(f = f, l = l, exon_id = exon_id, N_1 = N_1, N_2 = N_2, R = R, K = K, gene_id = gene_id, 
                                        burn_in = burn_in, mean_log_precision = mean_log_precision, sd_log_precision = sd_log_precision,
                                        FIRST_chain = FIRST_chain + 1) )

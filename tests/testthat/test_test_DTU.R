@@ -24,7 +24,7 @@ test_that("test_DTU() works faultlessly.", {
                      gene_to_transcript = gene_tr_id)
   
   expect_is(results, "BANDITS_test")
-  expect_is(top_genes(results), "data.frame")
-  expect_is(top_transcripts(results), "data.frame")
+  expect_is(Gene_results(results), "data.frame")
+  expect_is(Transcript_results(results), "data.frame")
   expect_is(convergence(results), "data.frame")
 })

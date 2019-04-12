@@ -15,15 +15,15 @@ if (!requireNamespace("BiocManager", quietly=TRUE))
 BiocManager::install("BANDITS")
 ```
 
-## Devel installation from Github
+## Devel installation from github
 To install the latest development version of the package from github, use `devtools` (available [here](https://github.com/hadley/devtools)):
 ``` r
 devtools::install_github("SimoneTiberi/BANDITS")
 ```
 
-To install the package jointly with its vignette use `build_vignettes = TRUE`:
+To install the package jointly with its vignette remove `--no-build-vignettes` from `build_opts`:
 ``` r
-devtools::install_github("SimoneTiberi/BANDITS", build_vignettes = TRUE)
+devtools::install_github("SimoneTiberi/BANDITS", build_opts = c("--no-resave-data", "--no-manual"))
 ```
 
 ## Vignette
@@ -40,12 +40,12 @@ browseVignettes("BANDITS")
 
 ## Alignment
 The package inputs the equivalence classes and respective counts, representing what transcripts each read is compatible with.
-These can be obtained by aligning reads either directly to a reference transcriptome with pseudo-alignmers, such as \software{salmon} or \software{kallisto}, or to a reference genome with splice-aware genome alignment algorithms, such as \software{STAR} or \software{TopHat2}, and checking the transcripts compatible with each genome alignment.
+These can be obtained by aligning reads either directly to a reference transcriptome with pseudo-alignmers, such as `salmon` or `kallisto`, or to a reference genome with splice-aware genome alignment algorithms, such as `STAR` or `TopHat2`, and checking the transcripts compatible with each genome alignment.
 
-NOTE: currently \software{BANDITS} only inputs equivalence classes computed from \software{salmon}.
-We are extending our current framework to allows reads to be aligned with \software{kallisto}.
+NOTE: currently `BANDITS` only inputs equivalence classes computed from `salmon`.
+We are extending our current framework to allows reads to be aligned with `kallisto`.
 
-Importantly, when using \software{salmon}, use the option `--dumpEq` to obtain the equivalence classes, and when using \software{STAR}, use the option `--quantMode TranscriptomeSAM` to obtain alignments translated into transcript coordinates.
+Importantly, when using `salmon`, use the option `--dumpEq` to obtain the equivalence classes, and when using `STAR`, use the option `--quantMode TranscriptomeSAM` to obtain alignments translated into transcript coordinates.
 
 Below we show a pipeline for aligning reads in both ways.
 

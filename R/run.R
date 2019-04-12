@@ -18,7 +18,8 @@
 #' @param R the number of iterations for the MCMC algorithm (after the burn-in).
 #' Min 10^4.
 #' Albeit no difference was observed in simulation studies when increasing 'R' above 10^4, 
-#' we encourage users to possibly use higher values of R (e.g., double) if the computational time allows it.
+#' we encourage users to possibly use higher values of R (e.g., 2*10^4), if the computational time allows it,
+#' particularly for comparisons between 3 or more groups.
 #' @param burn_in the length of the burn-in to be discarded (before convergence is reached).
 #' Min 2*10^3.
 #' Albeit no difference was observed in simulation studies when increasing 'burn_in' above 2*10^3, 
@@ -33,145 +34,31 @@
 #' @return A \code{\linkS4class{BANDITS_test}} object.
 #' 
 #' @examples 
-#' ## Preliminary information
-#' 
-#' # specify the directory of the internal data:
-#' data_dir = system.file("extdata", package = "BANDITS")
-#' data_dir
-#' 
 #' # load gene_to_transcript matching:
 #' data("gene_tr_id", package = "BANDITS")
-#' # gene_tr_id contains transcripts ids on the first column
-#' # and the corresponding gene ids on the second column:
-#' head(gene_tr_id)
 #' 
-#' # Specify the directory of the transcript level estimated counts.
-#' sample_names = paste0("sample", seq_len(4))
-#' quant_files = file.path(data_dir, sample_names, "quant.sf")
-#' file.exists(quant_files)
-#' 
-#' # Load the transcript level estimated counts via tximport:
-#' library(tximport)
-#' txi = tximport(files = quant_files, type = "salmon", txOut = TRUE)
-#' counts = txi$counts
-#' head(counts)
-#' 
-#' # We define the design of the study: in our case we have 2 groups, 
-#' # that we call "A" and "B" of 2 samples each.
-#' samples_design = data.frame(sample_id = sample_names,
+#' # We define the design of the study
+#' samples_design = data.frame(sample_id = paste0("sample", seq_len(4)),
 #'                             group = c("A", "A", "B", "B"))
-#' samples_design
-#' 
-#' # The groups are defined in:
-#' levels(samples_design$group)
-#' 
-#' 
-#' 
-#' ## Optional (recommended): transcript pre-filtering
-#' 
-#' transcripts_to_keep = filter_transcripts(gene_to_transcript = gene_tr_id,
-#'                                          transcript_counts = counts,
-#'                                          min_transcript_proportion = 0.01,
-#'                                          min_transcript_counts = 10,
-#'                                          min_gene_counts = 20)
-#' head(transcripts_to_keep)
-#' 
-#' 
-#' 
-#' ## Load the data:
-#' 
-#' # compute the Median estimated effective length for each transcript:
-#' eff_len = eff_len_compute(x_eff_len = txi$length)
-#' 
-#' # specify the path to the equivalence classes:
-#' equiv_classes_files = file.path(data_dir, sample_names, "aux_info", "eq_classes.txt")
-#' file.exists(equiv_classes_files)
-#' 
-#' # Warning: the sample names in equiv_classes_files must have the same order
-#' # as those in the design object, containted in samples_design.
-#' equiv_classes_files
-#' samples_design$sample_id
-#' 
-#' # create data and filter internally lowly abundant transcripts:
-#' #input_data = create_data(gene_to_transcript = gene_tr_id,
-#' #                           path_to_eq_classes = equiv_classes_files, eff_len = eff_len, 
-#' #                           n_cores = 2,
-#' #                           transcripts_to_keep = transcripts_to_keep)
 #' 
 #' # load the pre-computed data:
 #' data("input_data", package = "BANDITS")
 #' input_data
 #' 
-#' # If transcripts pre-filtering is not wanted, 
-#' # do not specify \code{transcripts_to_keep} parameter.
-#' 
 #' # Filter lowly abundant genes:
 #' input_data = filter_genes(input_data, min_counts_per_gene = 20)
-#' 
-#' 
-#' 
-#' ## Optional (recommended): infer an informative prior for the precision parameter
-#' 
-#' # Use the same filtering criteria as in \code{\link{filter_transcripts}}; 
-#' # if transcript pre-filtering is not performed, set \code{min_transcript_proportion},
-#' # \code{min_transcript_counts} and \code{min_gene_counts} to 0.
-#' 
-#' #set.seed(61217)
-#' #precision = prior_precision(gene_to_transcript = gene_tr_id, transcript_counts = counts,
-#' #                       min_transcript_proportion = 0.01, min_transcript_counts = 10,
-#' #                       min_gene_counts = 20, n_cores = 2)
 #' 
 #' # load the pre-computed precision estimates:
 #' data(precision, package = "BANDITS")
 #' 
-#' # Plot the histogram of the genewise log-precision estimates.
-#' # The black solid line represents the normally distributed prior distribution 
-#' # for the log-precision parameter.
-#' plot_precision(precision)
-#' 
-#' 
-#' 
 #' ## Test for DTU
-#' #set.seed(61217)
-#' #results = test_DTU(BANDITS_data = input_data,
-#' #             precision = precision$prior,
-#' #             samples_design = samples_design,
-#' #             R = 10^4, burn_in = 2*10^3, n_cores = 2,
-#' #             gene_to_transcript = gene_tr_id)
-#' 
-#' # load the pre-computed results:
-#' data("results", package = "BANDITS")
+#' set.seed(61217)
+#' results = test_DTU(BANDITS_data = input_data,
+#'              precision = precision$prior,
+#'              samples_design = samples_design,
+#'              R = 10^4, burn_in = 2*10^3, n_cores = 2,
+#'              gene_to_transcript = gene_tr_id)
 #' results
-#' 
-#' # Visualize the most significant Genes, sorted by gene level significance.
-#' head(top_genes(results))
-#' 
-#' # Alternatively, gene-level results can also be sorted according to DTU_measure, 
-#' # which is a measure of the strength of the change between the 
-#' # average relative abundances of the two groups.
-#' head(top_genes(results, sort_by = "DTU_measure"))
-#' 
-#' # Visualize the most significant transcripts, sorted by transcript level significance.
-#' head(top_transcripts(results, sort_by = "transcript"))
-#' 
-#' # Visualize the convergence output for the most significant genes, 
-#' # sorted by gene level significance.
-#' head(convergence(results))
-#' 
-#' # We can further use the \code{gene} function to gather all output for a specific gene:
-#' # gene level, transcript level and convergence results.
-#' top_gene = top_genes(results, n = 1)
-#' gene(results, top_gene$Gene_id)
-#' 
-#' # Similarly we can use the \code{transcript} function to gather all output 
-#' # for a specific transcript.
-#' top_transcript = top_transcripts(results, n = 1)
-#' transcript(results, top_transcript$Transcript_id)
-#' 
-#' #Finally, we can plot the estimated average transcript relative expression 
-#' # in the two groups for a specific gene via \code{plot_proportions}.
-#' library(ggplot2)
-#' plot_proportions(results, top_gene$Gene_id)
 #' 
 #' @author Simone Tiberi \email{simone.tiberi@uzh.ch}
 #' 
@@ -214,7 +101,7 @@ test_DTU = function(BANDITS_data, precision = NULL, R = 10^4, burn_in = 2*10^3,
     mean_log_precision = 0
     sd_log_precision = 10
   }else{
-    if( {!is.vector(precision)} | {length(precision) != 2} ){
+    if( {is.list(precision)} | {length(precision) != 2} ){
       message("'precision' must be a vector of length 2")
       return(NULL)
     }
@@ -260,8 +147,8 @@ test_DTU = function(BANDITS_data, precision = NULL, R = 10^4, burn_in = 2*10^3,
   # Give priority to "most" computationally intensive genes (total number of transcripts):
   #########################################################################################################
   # store eff_len of Unique and Together transcritps:
-  eff_len_tr_Unique   = BANDITS_data@effLen[BANDITS_data@uniqueId == TRUE]
-  eff_len_tr_Together = BANDITS_data@effLen[BANDITS_data@uniqueId == FALSE]
+  eff_len_tr_Unique   = effLen(BANDITS_data)[uniqueId(BANDITS_data) == TRUE]
+  eff_len_tr_Together = effLen(BANDITS_data)[uniqueId(BANDITS_data) == FALSE]
   
   K_tot_Together = vapply( eff_len_tr_Together, length, FUN.VALUE = integer(1))
   # sapply( eff_len_tr_Together, length) 
@@ -301,7 +188,7 @@ test_DTU = function(BANDITS_data, precision = NULL, R = 10^4, burn_in = 2*10^3,
                          .packages=c("BANDITS"),
                          .errorhandling = "stop") %dorng%{
                            # ORDER counts to respect the ordering in "groups" via 'ord_samples'
-                           f = BANDITS_data@counts[[p]][,ord_samples]
+                           f = counts(BANDITS_data)[[p]][,ord_samples]
                            sel_samples = colSums(f) > 0.5
                            
                            # select samples with data only:
@@ -316,28 +203,28 @@ test_DTU = function(BANDITS_data, precision = NULL, R = 10^4, burn_in = 2*10^3,
                            res = NULL
                            
                            # if it's NOT Unique.
-                           if( cond_f & !BANDITS_data@uniqueId[[p]] ){ # for the first (Together) elements I run the together function
+                           if( cond_f & !uniqueId(BANDITS_data)[[p]] ){ # for the first (Together) elements I run the together function
                              res = wald_DTU_test_Together_FULL(f = f,
-                                                               l = BANDITS_data@effLen[[p]], 
-                                                               exon_id = BANDITS_data@classes[[p]],
-                                                               genes = BANDITS_data@genes[[p]],
-                                                               transcripts = BANDITS_data@transcripts[[p]],
+                                                               l = effLen(BANDITS_data)[[p]], 
+                                                               exon_id = classes(BANDITS_data)[[p]],
+                                                               genes = genes(BANDITS_data)[[p]],
+                                                               transcripts = transcripts(BANDITS_data)[[p]],
                                                                mean_log_precision = mean_log_precision, sd_log_precision = sd_log_precision,
                                                                R = 2*R, burn_in = 2*burn_in, N_1 = N1, N_2 = N2,
                                                                theshold_pval = theshold_pval)
                              # double iterations for Together genes: they typically require more iter than Unique genes (more complex posterior space to explore).
                            }else{ # for the following elements I run the Unique function
-                             if( cond_f & length(BANDITS_data@effLen[[p]]) > 1 ){ # run test only if there are at least 2 transcripts per gene.
+                             if( cond_f & length(effLen(BANDITS_data)[[p]]) > 1 ){ # run test only if there are at least 2 transcripts per gene.
                                res = wald_DTU_test_FULL( f = f,
-                                                         l = BANDITS_data@effLen[[p]], 
-                                                         exon_id = BANDITS_data@classes[[p]],
+                                                         l = effLen(BANDITS_data)[[p]], 
+                                                         exon_id = classes(BANDITS_data)[[p]],
                                                          mean_log_precision = mean_log_precision, sd_log_precision = sd_log_precision,
                                                          R = R, burn_in = burn_in, N_1 = N1, N_2 = N2,
                                                          theshold_pval = theshold_pval)
                                if(length(res[[1]]) > 1){
                                  res[[1]][[1]] = matrix(res[[1]][[1]], nrow = 1)
-                                 rownames(res[[1]][[1]]) = BANDITS_data@genes[[p]]
-                                 names(res[[1]][[2]]) = BANDITS_data@transcripts[[p]]
+                                 rownames(res[[1]][[1]]) = genes(BANDITS_data)[[p]]
+                                 names(res[[1]][[2]]) = transcripts(BANDITS_data)[[p]]
                                } # only if the mcmc has a return value.
                              }
                            }
@@ -453,9 +340,9 @@ test_DTU = function(BANDITS_data, precision = NULL, R = 10^4, burn_in = 2*10^3,
   # Return Convergence results:
   #########################################################################################################
   convergence = lapply(p_values_ALL, function(x) x[[2]])
-  n_genes_convergence = vapply( BANDITS_data@genes[final_order], length, FUN.VALUE = integer(1))
-  # sapply( BANDITS_data@genes[final_order], length)
-  genes_convergence = unlist(BANDITS_data@genes[final_order])
+  n_genes_convergence = vapply( genes(BANDITS_data)[final_order], length, FUN.VALUE = integer(1))
+  # sapply( genes(BANDITS_data)[final_order], length)
+  genes_convergence = unlist(genes(BANDITS_data)[final_order])
   
   convergence = rep(convergence, n_genes_convergence)
   
@@ -467,8 +354,8 @@ test_DTU = function(BANDITS_data, precision = NULL, R = 10^4, burn_in = 2*10^3,
   
   convergence = convergence[ order(p_values[match(rownames(convergence), rownames(p_values)), 1]) ,]
   
-  # remove gene ids that are not in "BANDITS_data@all_genes"; i.e., remove gene ids for (Together) genes with 1 transcript only!
-  convergence = convergence[ rownames(convergence) %in% BANDITS_data@all_genes, ]
+  # remove gene ids that are not in "all_genes(BANDITS_data)"; i.e., remove gene ids for (Together) genes with 1 transcript only!
+  convergence = convergence[ rownames(convergence) %in% all_genes(BANDITS_data), ]
   
   #########################################################################################################
   # Return results:

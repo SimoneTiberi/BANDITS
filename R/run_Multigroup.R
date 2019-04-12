@@ -17,9 +17,9 @@ test_DTU_multi_group = function(BANDITS_data, mean_log_precision, sd_log_precisi
   N_tot = sum(N)
   cumulative = c(0,cumsum(N))
   splits = list()
-  for(i in 2:length(cumulative) ){
-    splits[[i-1]] = {cumulative[i-1]+1}:cumulative[i]
-  }
+  splits = lapply(seq_len( length(cumulative) - 1), function(i){
+    {cumulative[i]+1}:cumulative[i+1]
+  })
   
   message("Starting the MCMC")
   
@@ -27,7 +27,7 @@ test_DTU_multi_group = function(BANDITS_data, mean_log_precision, sd_log_precisi
                          .packages=c("BANDITS"),
                          .errorhandling = "stop") %dorng%{
                            # ORDER counts to respect the ordering in "groups" via 'ord_samples'
-                           f = BANDITS_data@counts[[p]][,ord_samples]
+                           f = counts(BANDITS_data)[[p]][,ord_samples]
                            sel_samples = colSums(f) > 0.5
                            
                            # select samples with BANDITS_data only:
@@ -46,86 +46,114 @@ test_DTU_multi_group = function(BANDITS_data, mean_log_precision, sd_log_precisi
                            if(cond_f){ # there are at least 2 groups
                              if(length(N_mg) > 2.5){ # if there are > 2 samples, run the Multi-group comparison
                                
-                               if( !BANDITS_data@uniqueId[[p]] ){ # for the first (Together) elements I run the together function
+                               if( !uniqueId(BANDITS_data)[[p]] ){ # for the first (Together) elements I run the together function
                                  res = wald_DTU_test_MultiGroup_Together(f = f,
-                                                                         l = BANDITS_data@effLen[[p]], 
-                                                                         exon_id = BANDITS_data@classes[[p]],
-                                                                         genes = BANDITS_data@genes[[p]],
-                                                                         transcripts = BANDITS_data@transcripts[[p]],
+                                                                         l = effLen(BANDITS_data)[[p]], 
+                                                                         exon_id = classes(BANDITS_data)[[p]],
+                                                                         genes = genes(BANDITS_data)[[p]],
+                                                                         transcripts = transcripts(BANDITS_data)[[p]],
                                                                          mean_log_precision = mean_log_precision, sd_log_precision = sd_log_precision,
                                                                          R = 2*R, burn_in = 2*burn_in, N = N_mg,
                                                                          theshold_pval = theshold_pval)
+                                 if( length(res[[1]]) > 1 ){
+                                   if(!is.null(res[[1]][[3]])){ # if trans result is not null (i.e., if the gene was analyzed):
+                                     # Store the transcripts modes in a matrix, leave empty groups which were not analyzed:
+                                     res[[1]][[3]] = do.call(rbind, res[[1]][[3]]) # gather together results from different genes.
+                                     res[[1]][[4]] = do.call(rbind, res[[1]][[4]])
+                                     
+                                     # add a null column for the group which was not analyzed:
+                                     trans_mode = matrix(NaN, nrow = nrow(res[[1]][[3]]), ncol = length(sel_groups)) # rows = transcripts; cols = groups
+                                     trans_mode[, sel_groups ] = res[[1]][[3]]
+                                     res[[1]][[3]] = trans_mode # rows = transcripts; cols = groups
+                                     
+                                     # add a null column for the group which was not analyzed:
+                                     trans_sd = matrix(NaN, nrow = nrow(res[[1]][[4]]), ncol = length(sel_groups)) # rows = transcripts; cols = groups
+                                     trans_sd[, sel_groups ] = res[[1]][[4]]
+                                     res[[1]][[4]] = trans_sd # rows = transcripts; cols = groups
+                                   }
+                                 }                                 
+                                 
                                }else{ # for the following elements I run the Unique function
-                                 if( length(BANDITS_data@effLen[[p]]) > 1 ){ # run test only if there are at least 2 transcripts per gene.
+                                 if( length(effLen(BANDITS_data)[[p]]) > 1 ){ # run test only if there are at least 2 transcripts per gene.
                                    res = wald_DTU_test_MultiGroup(f = as.data.frame(f),
-                                                                  l = BANDITS_data@effLen[[p]], 
-                                                                  exon_id = BANDITS_data@classes[[p]],
+                                                                  l = effLen(BANDITS_data)[[p]], 
+                                                                  exon_id = classes(BANDITS_data)[[p]],
                                                                   mean_log_precision = mean_log_precision, 
                                                                   sd_log_precision = sd_log_precision,
                                                                   R = R, burn_in = burn_in, N = N_mg,
                                                                   theshold_pval = theshold_pval)
                                    if(length(res[[1]]) > 1){
-                                     names(res[[1]][[2]]) = BANDITS_data@transcripts[[p]]
-                                     names(res[[1]][[1]]) = BANDITS_data@genes[[p]]
-                                   }
+                                     names(res[[1]][[2]]) = transcripts(BANDITS_data)[[p]]
+                                     names(res[[1]][[1]]) = genes(BANDITS_data)[[p]]
+                                     
+                                     # Store the transcripts modes in a matrix, leave empty groups which were not analyzed:
+                                     trans_mode = matrix(NaN, nrow = length(transcripts(BANDITS_data)[[p]]), ncol = length(sel_groups)) # rows = transcripts; cols = groups
+                                     trans_mode[ , sel_groups] = res[[1]][[3]]
+                                     res[[1]][[3]] = trans_mode # rows = transcripts; cols = groups
+                                     
+                                     trans_sd = matrix(NaN, nrow = length(transcripts(BANDITS_data)[[p]]), ncol = length(sel_groups)) # rows = transcripts; cols = groups
+                                     trans_sd[ , sel_groups] = res[[1]][[4]]
+                                     res[[1]][[4]] = trans_sd # rows = transcripts; cols = groups
+                                   } # only if the mcmc has a return value.
                                  }
                                }
                                
                              }else{  # if there are only 2 samples left (with counts), run the classical 2-group comparison:
                                f = as.matrix(f) # the 2-group comparison requires f to be a matrix
                                
-                               if( !BANDITS_data@uniqueId[[p]] ){ # for the first (Together) elements I run the together function
+                               if( !uniqueId(BANDITS_data)[[p]] ){ # for the first (Together) elements I run the together function
                                  res = wald_DTU_test_Together_FULL(f = f,
-                                                                   l = BANDITS_data@effLen[[p]], 
-                                                                   exon_id = BANDITS_data@classes[[p]],
-                                                                   genes = BANDITS_data@genes[[p]],
-                                                                   transcripts = BANDITS_data@transcripts[[p]],
+                                                                   l = effLen(BANDITS_data)[[p]], 
+                                                                   exon_id = classes(BANDITS_data)[[p]],
+                                                                   genes = genes(BANDITS_data)[[p]],
+                                                                   transcripts = transcripts(BANDITS_data)[[p]],
                                                                    mean_log_precision = mean_log_precision, sd_log_precision = sd_log_precision,
                                                                    R = 2*R, burn_in = 2*burn_in, N_1 = N_mg[1], N_2 = N_mg[2],
                                                                    theshold_pval = theshold_pval)
-                                 if(length(res[[1]]) > 1){
+                                 if( length(res[[1]]) > 1 ){
                                    res[[1]][[1]] = res[[1]][[1]][,1] # only keep the first value (the gene p.val)
                                    
-                                   for(tr_id in seq_len(length(res[[1]][[3]]) )){ # loop over the transcripts to store results from a list into a matrix structure:
-                                     if(!is.null(res[[1]][[3]][[tr_id]])){ # if trans result is not null (i.e., if the gene was analyzed):
-                                       # Store the transcripts modes in a matrix, leave empty groups which were not analyzed:
-                                       trans_mode = matrix(NaN, nrow = length(res[[1]][[3]][[tr_id]]), ncol = length(sel_groups)) # rows = transcripts; cols = groups
-                                       trans_mode[ , which(sel_groups)[1]] = res[[1]][[3]][[tr_id]]
-                                       trans_mode[ , which(sel_groups)[2]] = res[[1]][[4]][[tr_id]]
-                                       res[[1]][[3]][[tr_id]] = trans_mod # rows = transcripts; cols = groups
-                                       
-                                       trans_sd = matrix(NaN, nrow = length(res[[1]][[5]][[tr_id]]), ncol = length(sel_groups)) # rows = transcripts; cols = groups
-                                       trans_sd[ , which(sel_groups)[1]] = res[[1]][[5]][[tr_id]]
-                                       trans_sd[ , which(sel_groups)[2]] = res[[1]][[6]][[tr_id]]
-                                       res[[1]][[4]][[tr_id]] = trans_sd # rows = transcripts; cols = groups
-                                     }
+                                   if(!is.null(res[[1]][[3]])){ # if trans result is not null (i.e., if the gene was analyzed):
+                                     # Store the transcripts modes in a matrix, leave empty groups which were not analyzed:
+                                     res[[1]][[3]] = cbind( do.call(c, res[[1]][[3]]), do.call(c, res[[1]][[4]])) # gather together MEAN results from different groups
+                                     res[[1]][[4]] = cbind( do.call(c, res[[1]][[5]]), do.call(c, res[[1]][[6]])) # gather together SD results from different groups
+                                     
+                                     # add a null column for the group which was not analyzed:
+                                     trans_mode = matrix(NaN, nrow = nrow(res[[1]][[3]]), ncol = length(sel_groups)) # rows = transcripts; cols = groups
+                                     trans_mode[, sel_groups ] = res[[1]][[3]]
+                                     res[[1]][[3]] = trans_mode # rows = transcripts; cols = groups
+                                     
+                                     # add a null column for the group which was not analyzed:
+                                     trans_sd = matrix(NaN, nrow = nrow(res[[1]][[4]]), ncol = length(sel_groups)) # rows = transcripts; cols = groups
+                                     trans_sd[, sel_groups ] = res[[1]][[4]]
+                                     res[[1]][[4]] = trans_sd # rows = transcripts; cols = groups
                                    }
-                                 }                                 
+                                 }
                                  # double iterations for Together genes: they typically require more iter than Unique genes (more complex posterior space to explore).
                                }else{ # for the following elements I run the Unique function
-                                 if( length(BANDITS_data@effLen[[p]]) > 1 ){ # run test only if there are at least 2 transcripts per gene.
+                                 if( length(effLen(BANDITS_data)[[p]]) > 1 ){ # run test only if there are at least 2 transcripts per gene.
                                    res = wald_DTU_test_FULL( f = f,
-                                                             l = BANDITS_data@effLen[[p]], 
-                                                             exon_id = BANDITS_data@classes[[p]],
+                                                             l = effLen(BANDITS_data)[[p]], 
+                                                             exon_id = classes(BANDITS_data)[[p]],
                                                              mean_log_precision = mean_log_precision, sd_log_precision = sd_log_precision,
                                                              R = R, burn_in = burn_in, N_1 = N_mg[1], N_2 = N_mg[2],
                                                              theshold_pval = theshold_pval)
                                    if(length(res[[1]]) > 1){
                                      res[[1]][[1]] = res[[1]][[1]][1] # only keep the first value (the gene p.val)
-                                     names(res[[1]][[1]]) = BANDITS_data@genes[[p]]
-                                     names(res[[1]][[2]]) = BANDITS_data@transcripts[[p]]
+                                     names(res[[1]][[1]]) = genes(BANDITS_data)[[p]]
+                                     names(res[[1]][[2]]) = transcripts(BANDITS_data)[[p]]
                                      
                                      # Store the transcripts modes in a matrix, leave empty groups which were not analyzed:
-                                     trans_mode = matrix(NaN, nrow = length(BANDITS_data@transcripts[[p]]), ncol = length(sel_groups)) # rows = transcripts; cols = groups
+                                     trans_mode = matrix(NaN, nrow = length(transcripts(BANDITS_data)[[p]]), ncol = length(sel_groups)) # rows = transcripts; cols = groups
                                      trans_mode[ , which(sel_groups)[1]] = res[[1]][[3]]
                                      trans_mode[ , which(sel_groups)[2]] = res[[1]][[4]]
                                      res[[1]][[3]] = trans_mode # rows = transcripts; cols = groups
                                      
-                                     trans_sd = matrix(NaN, nrow = length(BANDITS_data@transcripts[[p]]), ncol = length(sel_groups)) # rows = transcripts; cols = groups
+                                     trans_sd = matrix(NaN, nrow = length(transcripts(BANDITS_data)[[p]]), ncol = length(sel_groups)) # rows = transcripts; cols = groups
                                      trans_sd[ , which(sel_groups)[1]] = res[[1]][[5]]
                                      trans_sd[ , which(sel_groups)[2]] = res[[1]][[6]]
                                      res[[1]][[4]] = trans_sd # rows = transcripts; cols = groups
-                                   } # only if the mcmc has a return value.
+                                   } # only if the mcmc has a return value. 
                                  }
                                }
                                
@@ -216,8 +244,8 @@ test_DTU_multi_group = function(BANDITS_data, mean_log_precision, sd_log_precisi
   
   # Compute "conservative" transcript level test,
   # take min between gene and transcript level tests (CHECK Koen package):
-  max_gene_tr_p.val     = apply( cbind(p_values_tr, p_values[match(genes_in_tr, names(p_values))]), 1, max)
-  max_gene_tr_adj.p.val = apply( cbind(adj.p_values_tr, adj.p_values[match(genes_in_tr, names(adj.p_values))]), 1, max)
+  max_gene_tr_p.val     = apply( cbind(p_values_tr, p_values[match(genes_in_tr, names(p_values))]), 1, max, na.rm = TRUE)
+  max_gene_tr_adj.p.val = apply( cbind(adj.p_values_tr, adj.p_values[match(genes_in_tr, names(adj.p_values))]), 1, max, na.rm = TRUE)
   
   tr_DF = data.frame(Gene_id = genes_in_tr, Transcript_id = rownames(p_values_tr), 
                      p.values = p_values_tr[,1], adj.p.values = adj.p_values_tr,
@@ -236,9 +264,9 @@ test_DTU_multi_group = function(BANDITS_data, mean_log_precision, sd_log_precisi
   # Return Convergence results:
   #########################################################################################################
   convergence = lapply(p_values_ALL, function(x) x[[2]])
-  n_genes_convergence = vapply( BANDITS_data@genes[final_order], length, FUN.VALUE = integer(1))
-  # sapply( BANDITS_data@genes[final_order], length)
-  genes_convergence = unlist(BANDITS_data@genes[final_order])
+  n_genes_convergence = vapply( genes(BANDITS_data)[final_order], length, FUN.VALUE = integer(1))
+  # sapply( genes(BANDITS_data)[final_order], length)
+  genes_convergence = unlist(genes(BANDITS_data)[final_order])
   
   convergence = rep(convergence, n_genes_convergence)
   
@@ -250,8 +278,8 @@ test_DTU_multi_group = function(BANDITS_data, mean_log_precision, sd_log_precisi
   
   convergence = convergence[order(convergence[,2], decreasing = FALSE),]
   
-  # remove gene ids that are not in "BANDITS_data@all_genes"; i.e., remove gene ids for (Together) genes with 1 transcript only!
-  convergence = convergence[ rownames(convergence) %in% BANDITS_data@all_genes, ]
+  # remove gene ids that are not in "all_genes(BANDITS_data)"; i.e., remove gene ids for (Together) genes with 1 transcript only!
+  convergence = convergence[ rownames(convergence) %in% all_genes(BANDITS_data), ]
   
   #########################################################################################################
   # Return results:

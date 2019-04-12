@@ -14,9 +14,7 @@ test_that("prior_precision() works faultlessly.", {
                               min_gene_counts = 20, n_cores = 2)
 
   expect_is(precision, "list")
-#  expect_is(precision$prior, "vector")
   expect_is(precision$prior, "numeric")
-#  expect_is(precision$genewise_log_precision, "vector")
   expect_is(precision$genewise_log_precision, "numeric")
   expect_true(length(precision$prior) == 2)
 })

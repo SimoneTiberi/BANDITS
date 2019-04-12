@@ -22,8 +22,8 @@
 #' \item \code{convergence(x)}: returns the convergence diagnostic of the posterior MCMC chains for every gene.
 #' \item \code{gene(x, gene_id)}: returns a list with all results for the gene(s) specified in 'gene_id': gene results, corresponding transcript results and convergence diagnostic.
 #' \item \code{transcript(x, transcript_id)}: returns a list with all results for the trancript specified in 'transcript_id': transcript results, corresponding gene results and convergence diagnostic.
-#' \item \code{plot_proportions(x, gene_id_plot, CI = TRUE, CI_level = 0.95)}: plots the posterior means of the average transcripts
-#'  relative expression (i.e., the proportions) of each condition, for the gene specified in 'gene_id_plot'.
+#' \item \code{plot_proportions(x, gene_id, CI = TRUE, CI_level = 0.95)}: plots the posterior means of the average transcripts
+#'  relative expression (i.e., the proportions) of each condition, for the gene specified in 'gene_id'.
 #'  If 'CI' is TRUE, a profile Wald type confidence interval will also be plotted for each transcript estimated proportion;
 #'  the level of the confidence interval is specified by 'CI_level'.
 #' }
@@ -49,9 +49,11 @@
 #' \item adj.p.values is the Benjamini-Hochberg adjusted p.values (via \code{\link{p.adjust}});
 #' \item Max_Gene_Tr.p.val is a conservative p.value and represents the maximum between the transcript p.value and corresponding gene p.value;
 #' \item Max_Gene_Tr.Adj.p.val is the Benjamini-Hochberg adjusted Max_Gene_Tr.p.val (via \code{\link{p.adjust}});
-#' \item Mean "group_name" indicates the posterior mean of the average relative abundance of the transcript in group "group_name";
-#' \item sd "group_name" indicates the standard deviation of the average relative abundance of the transcript in group "group_name";
-#' it indicates the variability in the mean estimate and is used to plot a 
+#' \item Mean "group_name" indicates the posterior mean of the average relative abundance of the transcript in group "group_name"
+#' (an \code{NaN} value indicates that no data was available for a group to estimate parameters);
+#' \item sd "group_name" indicates the standard deviation of the average relative abundance of the transcript in group "group_name"
+#' (an \code{NaN} value indicates that no data was available for a group to estimate parameters);
+#' this column indicates the variability in the mean estimate and is used to plot a 
 #' Wald type confidence interval for the mean relative abundance via \code{\link{plot_proportions}}.
 #' }
 #' 
@@ -68,115 +70,9 @@
 #' It is provided by the user to \code{\link{test_DTU}}.
 #' 
 #' @examples 
-#' ## Preliminary information
-#' 
-#' # specify the directory of the internal data:
-#' data_dir = system.file("extdata", package = "BANDITS")
-#' data_dir
-#' 
-#' # load gene_to_transcript matching:
-#' data("gene_tr_id", package = "BANDITS")
-#' # gene_tr_id contains transcripts ids on the first column
-#' # and the corresponding gene ids on the second column:
-#' head(gene_tr_id)
-#' 
-#' # Specify the directory of the transcript level estimated counts.
-#' sample_names = paste0("sample", seq_len(4))
-#' quant_files = file.path(data_dir, sample_names, "quant.sf")
-#' file.exists(quant_files)
-#' 
-#' # Load the transcript level estimated counts via tximport:
-#' library(tximport)
-#' txi = tximport(files = quant_files, type = "salmon", txOut = TRUE)
-#' counts = txi$counts
-#' head(counts)
-#' 
-#' # We define the design of the study: in our case we have 2 groups, 
-#' # that we call "A" and "B" of 2 samples each.
-#' samples_design = data.frame(sample_id = sample_names,
-#'                             group = c("A", "A", "B", "B"))
-#' samples_design
-#' 
-#' # The groups are defined in:
-#' levels(samples_design$group)
-#' 
-#' 
-#' 
-#' ## Optional (recommended): transcript pre-filtering
-#' 
-#' transcripts_to_keep = filter_transcripts(gene_to_transcript = gene_tr_id,
-#'                                          transcript_counts = counts,
-#'                                          min_transcript_proportion = 0.01,
-#'                                          min_transcript_counts = 10,
-#'                                          min_gene_counts = 20)
-#' head(transcripts_to_keep)
-#' 
-#' 
-#' 
-#' ## Load the data:
-#' 
-#' # compute the Median estimated effective length for each transcript:
-#' eff_len = eff_len_compute(x_eff_len = txi$length)
-#' 
-#' # specify the path to the equivalence classes:
-#' equiv_classes_files = file.path(data_dir, sample_names, "aux_info", "eq_classes.txt")
-#' file.exists(equiv_classes_files)
-#' 
-#' # Warning: the sample names in equiv_classes_files must have the same order
-#' # as those in the design object, containted in samples_design.
-#' equiv_classes_files
-#' samples_design$sample_id
-#' 
-#' # create data and filter internally lowly abundant transcripts:
-#' #input_data = create_data(gene_to_transcript = gene_tr_id,
-#' #                           path_to_eq_classes = equiv_classes_files, eff_len = eff_len, 
-#' #                           n_cores = 2,
-#' #                           transcripts_to_keep = transcripts_to_keep)
-#' 
-#' # load the pre-computed data:
-#' data("input_data", package = "BANDITS")
-#' input_data
-#' 
-#' # If transcripts pre-filtering is not wanted, 
-#' # do not specify \code{transcripts_to_keep} parameter.
-#' 
-#' # Filter lowly abundant genes:
-#' input_data = filter_genes(input_data, min_counts_per_gene = 20)
-#' 
-#' 
-#' 
-#' ## Optional (recommended): infer an informative prior for the precision parameter
-#' 
-#' # Use the same filtering criteria as in \code{\link{filter_transcripts}}; 
-#' # if transcript pre-filtering is not performed, set \code{min_transcript_proportion},
-#' # \code{min_transcript_counts} and \code{min_gene_counts} to 0.
-#' 
-#' #set.seed(61217)
-#' #precision = prior_precision(gene_to_transcript = gene_tr_id, transcript_counts = counts,
-#' #                       min_transcript_proportion = 0.01, min_transcript_counts = 10,
-#' #                       min_gene_counts = 20, n_cores = 2)
-#' 
-#' # load the pre-computed precision estimates:
-#' data(precision, package = "BANDITS")
-#' 
-#' # Plot the histogram of the genewise log-precision estimates.
-#' # The black solid line represents the normally distributed prior distribution 
-#' # for the log-precision parameter.
-#' plot_precision(precision)
-#' 
-#' 
-#' 
-#' ## Test for DTU
-#' #set.seed(61217)
-#' #results = test_DTU(BANDITS_data = input_data,
-#' #             precision = precision$prior,
-#' #             samples_design = samples_design,
-#' #             R = 10^4, burn_in = 2*10^3, n_cores = 2,
-#' #             gene_to_transcript = gene_tr_id)
-#' 
 #' # load the pre-computed results:
 #' data("results", package = "BANDITS")
-#' results
+#' show(results)
 #' 
 #' # Visualize the most significant Genes, sorted by gene level significance.
 #' head(top_genes(results))
@@ -193,18 +89,18 @@
 #' # sorted by gene level significance.
 #' head(convergence(results))
 #' 
-#' # We can further use the \code{gene} function to gather all output for a specific gene:
+#' # We can further use the 'gene' function to gather all output for a specific gene:
 #' # gene level, transcript level and convergence results.
 #' top_gene = top_genes(results, n = 1)
 #' gene(results, top_gene$Gene_id)
 #' 
-#' # Similarly we can use the \code{transcript} function to gather all output 
+#' # Similarly we can use the 'transcript function to gather all output 
 #' # for a specific transcript.
 #' top_transcript = top_transcripts(results, n = 1)
 #' transcript(results, top_transcript$Transcript_id)
 #' 
 #' #Finally, we can plot the estimated average transcript relative expression 
-#' # in the two groups for a specific gene via \code{plot_proportions}.
+#' # in the two groups for a specific gene via 'plot_proportions'.
 #' library(ggplot2)
 #' plot_proportions(results, top_gene$Gene_id)
 #' 
@@ -212,7 +108,7 @@
 #'
 #' @seealso \code{\link{test_DTU}}, \code{\link{create_data}}, \code{\linkS4class{BANDITS_data}}
 #' 
-#' @aliases BANDITS_test length top_genes top_transcripts convergence gene transcript plot_proportions
+#' @aliases BANDITS_test top_genes top_transcripts convergence gene transcript plot_proportions
 #' 
 #' @export
 setClass("BANDITS_test", 
@@ -223,15 +119,55 @@ setClass("BANDITS_test",
 #' @param object,x a 'BANDITS_test' object.
 #' @export
 setMethod("show", "BANDITS_test", function(object){
-  message(paste0("A 'BANDITS_test' object, with ", nrow(object@Gene_results), " genes and ", nrow(object@Transcript_results), " transcript level results."))
+  message(paste0("A 'BANDITS_test' object, with ", nrow(Gene_results(object)), " genes and ", nrow(Transcript_results(object)), " transcript level results."))
 })
 
+###############################################################################
+### Set validity of the object
+###############################################################################
+setValidity("BANDITS_test", function(object){
+  # Has to return TRUE for a valid object!
+  if( !all( Transcript_results(object)$Gene_id %in% Gene_results(object)$Gene_id) ){
+    return("All genes appearing in @Transcript_results slot must also appear in @Gene_results slot")
+  }
+  
+  if( !all( Gene_results(object)$Gene_id %in% convergence(object)$Gene_id) ){
+    return("All genes appearing in @Gene_results slot must also appear in @Convergence slot")
+  }
+  
+  return(TRUE)
+})
+
+
+###############################################################################
+### accessing methods: gene & transcript private, convergence public
+###############################################################################
+setGeneric("Gene_results", function(x) 
+  standardGeneric("Gene_results") )
+setMethod("Gene_results", "BANDITS_test", function(x) x@Gene_results)
+
+setGeneric("Transcript_results", function(x) 
+  standardGeneric("Transcript_results") )
+setMethod("Transcript_results", "BANDITS_test", function(x) x@Transcript_results)
+
+setGeneric("convergence", function(x) 
+  standardGeneric("convergence") )
+
+#' @rdname BANDITS_test-class
+#' @export
+setMethod("convergence", "BANDITS_test", function(x){
+  x@Convergence
+})
+
+###############################################################################
+### retrieve results (gene, transcript and convergence)
+###############################################################################
 setGeneric("top_genes", function(x, ...) 
   standardGeneric("top_genes") )
 
 #' @rdname BANDITS_test-class
 #' @param n the number of genes or transcripts to report. By default \code{n = Inf} and all results will be reported.
-#' @param sort_by_g "gene" for sorting results according to gene-level significance;
+#' @param sort_by_g "p.value" for sorting results according to gene-level significance (i.e., p.value);
 #' "DTU_measure" for sorting results according to the 'DTU_measure' (check the vignette for details).
 #' @export
 setMethod("top_genes", "BANDITS_test", function(x, n = Inf, sort_by_g = "p.value"){
@@ -245,26 +181,26 @@ setMethod("top_genes", "BANDITS_test", function(x, n = Inf, sort_by_g = "p.value
   }
   
   # take the min between the provided number and the size of the matrix:
-  n = min(n, nrow(x@Gene_results) )
+  n = min(n, nrow(Gene_results(x)) )
   
   if(sort_by_g == "p.value"){ # transcript results sorted according to gene-level p.value
-    return(x@Gene_results[seq_len(n),])
+    return(Gene_results(x)[seq_len(n),])
   }
   
-  if(is.null(x@Gene_results$DTU_measure)){
+  if(is.null(Gene_results(x)$DTU_measure)){
     message("Results cannot be sorted by 'DTU_measure': not available for multi-group comparisons.")
     return(NULL)
   }
   # transcript results sorted according to transcript-level p.value
-  x@Gene_results[order(x@Gene_results$DTU_measure, decreasing = TRUE)[seq_len(n)],] # high DTU_measure on top.
+  Gene_results(x)[order(Gene_results(x)$DTU_measure, decreasing = TRUE)[seq_len(n)],] # high DTU_measure on top.
 })
 
 setGeneric("top_transcripts", function(x, ...) 
   standardGeneric("top_transcripts") )
 
 #' @rdname BANDITS_test-class
-#' @param sort_by_tr "gene" for sorting results according to gene-level significance;
-#' "transcript" for sorting results according to transcript-level significance.
+#' @param sort_by_tr "gene" for sorting results according to gene-level significance (i.e., p.value);
+#' "transcript" for sorting results according to transcript-level significance (i.e., p.value).
 #' @export
 setMethod("top_transcripts", "BANDITS_test", function(x, n = Inf, sort_by_tr="gene"){
   if(!is.character(sort_by_tr)){
@@ -277,23 +213,18 @@ setMethod("top_transcripts", "BANDITS_test", function(x, n = Inf, sort_by_tr="ge
   }
   
   # take the min between the provided number and the size of the matrix:
-  n = min(n, nrow(x@Transcript_results) )
+  n = min(n, nrow(Transcript_results(x)) )
   
   if(sort_by_tr == "gene"){ # transcript results sorted according to gene-level p.value
-    return(x@Transcript_results[seq_len(n),])
+    return(Transcript_results(x)[seq_len(n),])
   }
   # transcript results sorted according to transcript-level p.value
-  x@Transcript_results[order(x@Transcript_results$p.values)[seq_len(n)],]
+  Transcript_results(x)[order(Transcript_results(x)$p.values)[seq_len(n)],]
 })
 
-setGeneric("convergence", function(x) 
-  standardGeneric("convergence") )
-
-#' @rdname BANDITS_test-class
-#' @export
-setMethod("convergence", "BANDITS_test", function(x){
-  x@Convergence
-})
+###############################################################################
+### retrieve individual genes and transcripts
+###############################################################################
 
 setGeneric("gene", function(x, ...)
   standardGeneric("gene") )
@@ -306,14 +237,14 @@ setMethod("gene", "BANDITS_test", function(x, gene_id){
     gene_id = as.character(gene_id)
   }
   
-  if( ! all( gene_id %in% as.character( x@Gene_results$Gene_id ) ) ){
+  if( ! all( gene_id %in% as.character( Gene_results(x)$Gene_id ) ) ){
     message("One or more genes in 'gene_id' were not found in the results")
     return(NULL)
   }
   
-  list( gene_results = x@Gene_results[ as.character( x@Gene_results$Gene_id ) %in% gene_id, ],
-        transcript_results = x@Transcript_results[  as.character( x@Transcript_results$Gene_id ) %in% gene_id, ],
-        convergence_results = x@Convergence[ as.character( x@Convergence$Gene_id ) %in% gene_id, ] )
+  list( gene_results = Gene_results(x)[ as.character( Gene_results(x)$Gene_id ) %in% gene_id, ],
+        transcript_results = Transcript_results(x)[  as.character( Transcript_results(x)$Gene_id ) %in% gene_id, ],
+        convergence_results = convergence(x)[ as.character( convergence(x)$Gene_id ) %in% gene_id, ] )
 })
 
 setGeneric("transcript", function(x, ...) 
@@ -327,26 +258,29 @@ setMethod("transcript", "BANDITS_test", function(x, transcript_id){
     transcript_id = as.character(transcript_id)
   }
   
-  if( ! transcript_id %in%  as.character(x@Transcript_results$Transcript_id ) ){
+  if( ! transcript_id %in%  as.character(Transcript_results(x)$Transcript_id ) ){
     message("transcript not found in results")
     return(NULL)
   }
   
-  gene_id = x@Transcript_results$Gene_id[ as.character(x@Transcript_results$Transcript_id) == transcript_id]
-  list( transcript_results = x@Transcript_results[ as.character(x@Transcript_results$Transcript_id) == transcript_id, ],
-        gene_results = x@Gene_results[ as.character(x@Gene_results$Gene_id) == gene_id, ],
-        convergence_results = x@Convergence[ as.character(x@Convergence$Gene_id) == gene_id, ] )
+  gene_id = Transcript_results(x)$Gene_id[ as.character(Transcript_results(x)$Transcript_id) == transcript_id]
+  list( transcript_results = Transcript_results(x)[ as.character(Transcript_results(x)$Transcript_id) == transcript_id, ],
+        gene_results = Gene_results(x)[ as.character(Gene_results(x)$Gene_id) == gene_id, ],
+        convergence_results = convergence(x)[ as.character(convergence(x)$Gene_id) == gene_id, ] )
 })
+
+###############################################################################
+### Plot results for a specific gene
+###############################################################################
 
 setGeneric("plot_proportions", function(x, ...) 
   standardGeneric("plot_proportions") )
 
 #' @rdname BANDITS_test-class
-#' @param gene_id_plot a character string indicating the gene to plot.
 #' @param CI a logical element indicating whether to also plot confidence boundaries (TRUE) or not (FALSE).
 #' @param CI_level a number between 0 and 1, indicating the level of the confidence interval to plot.
 #' @export
-setMethod("plot_proportions", "BANDITS_test", function(x, gene_id_plot,
+setMethod("plot_proportions", "BANDITS_test", function(x, gene_id,
                                                        CI = TRUE,
                                                        CI_level = 0.95){
   if(!is.logical(CI)){
@@ -354,28 +288,28 @@ setMethod("plot_proportions", "BANDITS_test", function(x, gene_id_plot,
     return(NULL)
   }
 
-  if(!is.character(gene_id_plot)){
-    gene_id_plot = as.character(gene_id_plot)
+  if(!is.character(gene_id)){
+    gene_id = as.character(gene_id)
   }
   
-  if( length(gene_id_plot) != 1){
-    message("'gene_id_plot' contains ", length(gene_id_plot), " values: one gene only can be specified.")
+  if( length(gene_id) != 1){
+    message("'gene_id' contains ", length(gene_id), " values: one gene only can be specified.")
     return(NULL)
   }
   
-  if( ! gene_id_plot %in% as.character( x@Transcript_results$Gene_id ) ){
+  if( ! gene_id %in% as.character( Transcript_results(x)$Gene_id ) ){
     message("gene not found in results")
     return(NULL)
   }
   
   group_names = levels(x@samples_design$group)
   
-  sel = x@Transcript_results$Gene_id == gene_id_plot
+  sel = Transcript_results(x)$Gene_id == gene_id
   
-  means = x@Transcript_results[sel, grep("Mean", names(x@Transcript_results))]
-  SD =  x@Transcript_results[sel, grep("sd", names(x@Transcript_results))]
+  means = Transcript_results(x)[sel, grep("Mean", names(Transcript_results(x)))]
+  SD =  Transcript_results(x)[sel, grep("sd", names(Transcript_results(x)))]
   n_groups = ncol(means)
-  tr_names = x@Transcript_results$Transcript_id[sel]
+  tr_names = Transcript_results(x)$Transcript_id[sel]
   # impose an order to the transcripts (according to the over-all relative abudance):
   ord = order(rowSums(means), decreasing = TRUE)
   
@@ -399,7 +333,7 @@ setMethod("plot_proportions", "BANDITS_test", function(x, gene_id_plot,
           legend.position = "right", 
           legend.title = element_text(size = 14), 
           legend.text = element_text(size = 14)) +
-    ggtitle(paste("Gene:", gene_id_plot, sep=" ")) +
+    ggtitle(paste("Gene:", gene_id, sep=" ")) +
     xlab("Features") +
     ylab("Proportions") +
     geom_point(data = prop_samp, 
@@ -419,17 +353,4 @@ setMethod("plot_proportions", "BANDITS_test", function(x, gene_id_plot,
   }
   
   ggp
-})
-
-setValidity("BANDITS_test", function(object){
-  # Has to return TRUE for a valid object!
-  if( !all( object@Transcript_results$Gene_id %in% object@Gene_results$Gene_id) ){
-    return("All genes appearing in @Transcript_results must also appear in @Gene_results")
-  }
-  
-  if( !all( object@Gene_results$Gene_id %in% object@Convergence$Gene_id) ){
-    return("All genes appearing in @Gene_results must also appear in @Convergence")
-  }
-  
-  return(TRUE)
 })

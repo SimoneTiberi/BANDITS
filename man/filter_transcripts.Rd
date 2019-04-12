@@ -34,33 +34,19 @@ Transcript pre-filtering is highly suggested: it both improves the performance o
 and decreases its computational cost.
 }
 \examples{
-## Preliminary information
-
 # specify the directory of the internal data:
 data_dir = system.file("extdata", package = "BANDITS")
-data_dir
 
 # load gene_to_transcript matching:
 data("gene_tr_id", package = "BANDITS")
-# gene_tr_id contains transcripts ids on the first column
-# and the corresponding gene ids on the second column:
-head(gene_tr_id)
-
-# Specify the directory of the transcript level estimated counts.
-sample_names = paste0("sample", seq_len(4))
-quant_files = file.path(data_dir, sample_names, "quant.sf")
-file.exists(quant_files)
 
 # Load the transcript level estimated counts via tximport:
 library(tximport)
+quant_files = file.path(data_dir, paste0("sample", seq_len(4)), "quant.sf")
 txi = tximport(files = quant_files, type = "salmon", txOut = TRUE)
 counts = txi$counts
-head(counts)
 
-
-
-## Optional (recommended): transcript pre-filtering
-
+# transcript pre-filtering:
 transcripts_to_keep = filter_transcripts(gene_to_transcript = gene_tr_id,
                                          transcript_counts = counts,
                                          min_transcript_proportion = 0.01,

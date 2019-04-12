@@ -27,63 +27,9 @@
 #' @slot all_genes \code{vector}, it lists all the genes to be analyzed (with at least 2 transcripts).
 #'
 #' @examples 
-#' ## Preliminary information
-#' 
-#' # specify the directory of the internal data:
-#' data_dir = system.file("extdata", package = "BANDITS")
-#' data_dir
-#' 
-#' # load gene_to_transcript matching:
-#' data("gene_tr_id", package = "BANDITS")
-#' # gene_tr_id contains transcripts ids on the first column
-#' # and the corresponding gene ids on the second column:
-#' head(gene_tr_id)
-#' 
-#' # Specify the directory of the transcript level estimated counts.
-#' sample_names = paste0("sample", seq_len(4))
-#' quant_files = file.path(data_dir, sample_names, "quant.sf")
-#' file.exists(quant_files)
-#' 
-#' # Load the transcript level estimated counts via tximport:
-#' library(tximport)
-#' txi = tximport(files = quant_files, type = "salmon", txOut = TRUE)
-#' counts = txi$counts
-#' head(counts)
-#' 
-#' 
-#' 
-#' ## Optional (recommended): transcript pre-filtering
-#' 
-#' transcripts_to_keep = filter_transcripts(gene_to_transcript = gene_tr_id,
-#'                                          transcript_counts = counts,
-#'                                          min_transcript_proportion = 0.01,
-#'                                          min_transcript_counts = 10,
-#'                                          min_gene_counts = 20)
-#' head(transcripts_to_keep)
-#' 
-#' 
-#' 
-#' ## Load the data:
-#' 
-#' # compute the Median estimated effective length for each transcript:
-#' eff_len = eff_len_compute(x_eff_len = txi$length)
-#' 
-#' # specify the path to the equivalence classes:
-#' equiv_classes_files = file.path(data_dir, sample_names, "aux_info", "eq_classes.txt")
-#' file.exists(equiv_classes_files)
-#' 
-#' 
-#' # create data and filter internally lowly abundant transcripts:
-#' #input_data = create_data(gene_to_transcript = gene_tr_id,
-#' #                           path_to_eq_classes = equiv_classes_files, eff_len = eff_len, 
-#' #                           n_cores = 2,
-#' #                           transcripts_to_keep = transcripts_to_keep)
-#' 
 #' # load the pre-computed data:
 #' data("input_data", package = "BANDITS")
-#' input_data
-#' 
-#' # If transcripts pre-filtering is not wanted, do not specify \code{transcripts\_to\_keep} parameter.
+#' show(input_data)
 #' 
 #' @author Simone Tiberi \email{simone.tiberi@uzh.ch}
 #'
@@ -100,16 +46,50 @@ setClass("BANDITS_data",
 #' @param object a 'BANDITS_data' object.
 #' @export
 setMethod("show", "BANDITS_data", function(object){
-  message(paste0("A 'BANDITS_data' object with ", ncol(object@counts[[1]]), " samples and ", length(object@all_genes), " genes."))
+  message(paste0("A 'BANDITS_data' object with ", ncol(counts(object)[[1]]), " samples and ", length(all_genes(object)), " genes."))
 })
 
+###############################################################################
+### Set validity of the object
+###############################################################################
 setValidity("BANDITS_data", function(object){
   # Has to return TRUE for a valid object!
-  n_groups = length(input_data@genes)
-  if( (n_groups != length(input_data@transcripts)) | (n_groups != length(input_data@effLen)) | (n_groups != length(input_data@classes)) | (n_groups != length(input_data@counts)) | (n_groups != length(input_data@uniqueId)) ){
-    return("The length of @genes, @transcripts, @effLen, @classes, @counts and @uniqueId must be the same")
+  n_groups = length(genes(object))
+  if( (n_groups != length(transcripts(object))) | (n_groups != length(effLen(object))) | (n_groups != length(classes(object))) | (n_groups != length(counts(object))) | (n_groups != length(uniqueId(object))) ){
+    return("The length of @genes, @transcripts, @effLen, @classes, @counts and @uniqueId slots must be the same")
   }
   
   return(TRUE)
 })
 
+
+###############################################################################
+### accessing methods, private
+###############################################################################
+setGeneric("genes", function(x) 
+  standardGeneric("genes") )
+setMethod("genes", "BANDITS_data", function(x) x@genes)
+
+setGeneric("transcripts", function(x) 
+  standardGeneric("transcripts") )
+setMethod("transcripts", "BANDITS_data", function(x) x@transcripts)
+
+setGeneric("effLen", function(x) 
+  standardGeneric("effLen") )
+setMethod("effLen", "BANDITS_data", function(x) x@effLen)
+
+setGeneric("classes", function(x) 
+  standardGeneric("classes") )
+setMethod("classes", "BANDITS_data", function(x) x@classes)
+
+setGeneric("counts", function(x) 
+  standardGeneric("counts") )
+setMethod("counts", "BANDITS_data", function(x) x@counts)
+
+setGeneric("uniqueId", function(x) 
+  standardGeneric("uniqueId") )
+setMethod("uniqueId", "BANDITS_data", function(x) x@uniqueId)
+
+setGeneric("all_genes", function(x) 
+  standardGeneric("all_genes") )
+setMethod("all_genes", "BANDITS_data", function(x) x@all_genes)
