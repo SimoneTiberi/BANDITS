@@ -1,7 +1,7 @@
 Package: BANDITS
 Type: Package
 Title: BANDITS: Bayesian ANalysis of DIfferenTial Splicing
-Version: 0.99.17
+Version: 0.99.0
 Date: 2019-02-19
 Author: Simone Tiberi and Mark D. Robinson
 Maintainer: Simone Tiberi <simone.tiberi@uzh.ch>
