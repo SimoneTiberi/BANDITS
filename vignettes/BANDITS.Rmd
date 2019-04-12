@@ -17,7 +17,7 @@ vignette: >
   %\VignetteIndexEntry{BANDITS: Bayesian ANalysis of DIfferenTial Splicing}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
-  output: 
+output: 
   BiocStyle::html_document
 ---
   
@@ -28,23 +28,23 @@ knitr::opts_chunk$set(tidy=FALSE, cache=TRUE,
 dev="png",
 message=TRUE, error=FALSE, warning=TRUE)
 ```
-  
-  # Introduction
-  *BANDITS* is a Bayesian hierarchical method to perform differential splicing via differential transcript usage (DTU).
-  *BANDITS* uses a hierarchical structure, via a Dirichlet-multinomial model, to explicitly model the over-dispersion between replicates and allowing for sample-specific transcript relative abundance (i.e., the proportions).
-  More mathematically, consider a gene with K transcripts with transcript level counts $Y = (Y_1, \ldots, Y_K)$; we assume that $Y \sim DM(\pi_1, \ldots,\pi_K, \delta)$, where
-  $DM$ denotes the Dirichlet-multinomial distribution, 
-  $\pi_1, \ldots,\pi_K$ indicate the relative abundance of transcripts $1, \ldots, K$, 
-  and $\delta$ represents the precision parameter, modelling the degree of over-dispersion between samples.
-  
-  We input the equivalence classes and respective counts, where the equivalence classes represent the group of transcripts reads are compatible with.
-  The method is embedded in a Bayesian hierarchical framework, where the posterior densities of the parameters are inferred via Markov chain Monte Carlo (MCMC) techniques.
-  The allocation of each RNA-seq read to its transcript of origin is treated as a latent variable and also sampled in the MCMC.
-  To test for DTU, we compare the average transcript relative abundance between two or more conditions.
-  A statistical test is performed, both, at the gene and transcript level, allowing scientists to investigate what specific transcripts are differentially used in significant genes.
-  
-  To access the R code used in the vignettes, type:
-  ```{r eval=FALSE} 
+
+# Introduction
+*BANDITS* is a Bayesian hierarchical method to perform differential splicing via differential transcript usage (DTU).
+*BANDITS* uses a hierarchical structure, via a Dirichlet-multinomial model, to explicitly model the over-dispersion between replicates and allowing for sample-specific transcript relative abundance (i.e., the proportions).
+More mathematically, consider a gene with K transcripts with transcript level counts $Y = (Y_1, \ldots, Y_K)$; we assume that $Y \sim DM(\pi_1, \ldots,\pi_K, \delta)$, where
+$DM$ denotes the Dirichlet-multinomial distribution, 
+$\pi_1, \ldots,\pi_K$ indicate the relative abundance of transcripts $1, \ldots, K$, 
+and $\delta$ represents the precision parameter, modelling the degree of over-dispersion between samples.
+
+We input the equivalence classes and respective counts, where the equivalence classes represent the group of transcripts reads are compatible with.
+The method is embedded in a Bayesian hierarchical framework, where the posterior densities of the parameters are inferred via Markov chain Monte Carlo (MCMC) techniques.
+The allocation of each RNA-seq read to its transcript of origin is treated as a latent variable and also sampled in the MCMC.
+To test for DTU, we compare the average transcript relative abundance between two or more conditions.
+A statistical test is performed, both, at the gene and transcript level, allowing scientists to investigate what specific transcripts are differentially used in significant genes.
+
+To access the R code used in the vignettes, type:
+```{r eval=FALSE} 
 browseVignettes("BANDITS")
 ```
 
