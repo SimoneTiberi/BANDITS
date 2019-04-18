@@ -1,9 +1,9 @@
 Package: BANDITS
 Type: Package
 Title: BANDITS: Bayesian ANalysis of DIfferenTial Splicing
-Version: 0.99.22
+Version: 0.99.0
 Date: 2019-02-19
-Author: Simone Tiberi and Mark D. Robinson
+Author: Simone Tiberi [aut, cre], Mark D. Robinson [aut].
 Maintainer: Simone Tiberi <simone.tiberi@uzh.ch>
 Description: BANDITS is a Bayesian hierarchical model for detecting differential splicing of genes and transcripts,
   via differential transcript usage (DTU), between two or more conditions.

@@ -40,10 +40,9 @@ browseVignettes("BANDITS")
 
 ## Alignment
 The package inputs the equivalence classes and respective counts, representing what transcripts each read is compatible with.
-These can be obtained by aligning reads either directly to a reference transcriptome with pseudo-alignmers, such as `salmon` or `kallisto`, or to a reference genome with splice-aware genome alignment algorithms, such as `STAR` or `TopHat2`, and checking the transcripts compatible with each genome alignment.
+These can be obtained by aligning reads either directly to a reference transcriptome with pseudo-alignmers, such as `salmon`, or to a reference genome with splice-aware genome alignment algorithms, such as `STAR`, and checking the transcripts compatible with each genome alignment with `salmon`
 
-NOTE: currently `BANDITS` only inputs equivalence classes computed from `salmon`.
-We are extending our current framework to allows reads to be aligned with `kallisto`.
+NOTE: currently `BANDITS` only inputs equivalence classes computed from `salmon`; hence it is possible to align reads with `STAR` or `salmon` and, in either case, compute the equivalence classes via `salmon`.
 
 Importantly, when using `salmon`, use the option `--dumpEq` to obtain the equivalence classes, and when using `STAR`, use the option `--quantMode TranscriptomeSAM` to obtain alignments translated into transcript coordinates.
 

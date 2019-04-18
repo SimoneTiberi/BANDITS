@@ -3,18 +3,21 @@ test_that("test_DTU() works faultlessly.", {
   data("precision", package = "BANDITS")
   data("input_data", package = "BANDITS")
   
-  input_data@genes = input_data@genes[1:2]
-  input_data@transcripts = input_data@transcripts[1:2]
-  input_data@effLen = input_data@effLen[1:2]
-  input_data@classes = input_data@classes[1:2]
-  input_data@counts = input_data@counts[1:2]
-  input_data@uniqueId = input_data@uniqueId[1:2]
-  input_data@all_genes = unlist(input_data@genes[1:2])
-
+  SEL = 1:2
+  
+  input_data = new("BANDITS_data",
+                     genes       = genes(input_data)[SEL], 
+                     transcripts = transcripts(input_data)[SEL],
+                     effLen      = effLen(input_data)[SEL],
+                     classes     = classes(input_data)[SEL],
+                     counts      = counts(input_data)[SEL], 
+                     uniqueId    = uniqueId(input_data)[SEL],
+                     all_genes   = all_genes(input_data)[ all_genes(input_data) %in% unlist(genes(input_data)[SEL]) ] )
+  
   sample_names = paste0("sample", seq_len(4))
   samples_design = data.frame(sample_id = sample_names,
                               group = c("A", "A", "B", "B"))
-
+  
   set.seed(61217)
   results = test_DTU(BANDITS_data = input_data,
                      precision = precision$prior,

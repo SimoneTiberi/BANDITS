@@ -658,7 +658,7 @@ read_eq_classes = function(fn, sep){
     return( read_eq_classes_filteringTranscripts(fn = fn, transcripts_to_keep = unique(ids),  sep = sep) )
   }
   
-  list(ids=ids, counts=cnt, class_ids=class_ids)
+  list(counts=cnt, class_ids=class_ids)
 }
 
 # Make function to import eq_classed from kallisto too!
@@ -678,8 +678,7 @@ read_eq_classes_filteringTranscripts = function(fn, transcripts_to_keep, sep) {
   
   # sort maybe not needed, double-check at the end!!!
   SEL_transcripts  = which(ids %in% transcripts_to_keep)
-  ids_sel = ids[SEL_transcripts] # transcript ids, filtered
-  
+
   #############  #############  #############  #############  #############  #############
   n = vapply(trans, length, FUN.VALUE = integer(1))
   # sapply(trans, length)
@@ -722,5 +721,5 @@ read_eq_classes_filteringTranscripts = function(fn, transcripts_to_keep, sep) {
   }, FUN.VALUE = integer(1))
   #  2.5 times faster than previous cnt_sel_unique computation!
   
-  list(ids=ids_sel, counts=cnt_sel_unique, class_ids=class_ids_sel[DUPS == FALSE])
+  list(counts=cnt_sel_unique, class_ids=class_ids_sel[DUPS == FALSE])
 }

@@ -12,7 +12,7 @@
 #' 
 #' @return
 #' \itemize{
-#' \item \code{show(object)}: returns the \code{head} of the gene and transcript level results and of the convergence diagnostic.
+#' \item \code{show(object)}: prints the number of gene and transcript level results in the \code{BANDITS_test} object.
 #' \item \code{top_genes(x, n = Inf,  sort_by_g = "p.value")}: returns the gene-level results of the DTU test for the top 'n' significant genes.
 #' By default n = Inf and all results will be reported.
 #' sort_by_g = "gene" for sorting results according to gene-level significance; sort_by_g = "DTU_measure" for sorting results according to the 'DTU_measure'.
@@ -119,7 +119,7 @@ setClass("BANDITS_test",
 #' @param object,x a 'BANDITS_test' object.
 #' @export
 setMethod("show", "BANDITS_test", function(object){
-  message(paste0("A 'BANDITS_test' object, with ", nrow(Gene_results(object)), " genes and ", nrow(Transcript_results(object)), " transcript level results."))
+  message(paste0("A 'BANDITS_test' object, with ", nrow(Gene_results(object)), " gene and ", nrow(Transcript_results(object)), " transcript level results."))
 })
 
 ###############################################################################
@@ -263,10 +263,10 @@ setMethod("transcript", "BANDITS_test", function(x, transcript_id){
     return(NULL)
   }
   
-  gene_id = Transcript_results(x)$Gene_id[ as.character(Transcript_results(x)$Transcript_id) == transcript_id]
-  list( transcript_results = Transcript_results(x)[ as.character(Transcript_results(x)$Transcript_id) == transcript_id, ],
-        gene_results = Gene_results(x)[ as.character(Gene_results(x)$Gene_id) == gene_id, ],
-        convergence_results = convergence(x)[ as.character(convergence(x)$Gene_id) == gene_id, ] )
+  gene_id = Transcript_results(x)$Gene_id[ as.character(Transcript_results(x)$Transcript_id) %in% transcript_id]
+  list( transcript_results = Transcript_results(x)[ as.character(Transcript_results(x)$Transcript_id) %in% transcript_id, ],
+        gene_results = Gene_results(x)[ as.character(Gene_results(x)$Gene_id) %in% gene_id, ],
+        convergence_results = convergence(x)[ as.character(convergence(x)$Gene_id) %in% gene_id, ] )
 })
 
 ###############################################################################

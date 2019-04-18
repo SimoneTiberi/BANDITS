@@ -73,10 +73,9 @@ devtools::install_github("SimoneTiberi/BANDITS",
 
 # Aligning reads
 The package inputs the equivalence classes and respective counts.
-These can be obtained by aligning reads either directly to a reference transcriptome with pseudo-alignmers, such as *salmon* [@salmon] or *kallisto* [@kallisto], or to a reference genome with splice-aware genome alignment algorithms, such as *STAR* [@STAR] or *TopHat2* [@TopHat2], and checking the transcripts compatible with each genome alignment (e.g., via *salmon*).
+These can be obtained by aligning reads either directly to a reference transcriptome with pseudo-alignmers, such as *salmon* [@salmon], or to a reference genome with splice-aware genome alignment algorithms, such as *STAR* [@STAR], and checking the transcripts compatible with each genome alignment (e.g., via *salmon*).
 
-NOTE: currently *BANDITS* only inputs equivalence classes computed from *salmon*.
-We are extending our current framework to allows reads to be aligned with *kallisto*.
+NOTE: currently *BANDITS* only inputs equivalence classes computed from *salmon*; hence it is possible to align reads with *STAR* or *salmon* and, in either case, compute the equivalence classes via *salmon*.
 
 Importantly, when using *salmon*, use the option `--dumpEq` to obtain the equivalence classes, and when using *STAR*, use the option `--quantMode TranscriptomeSAM` to obtain alignments translated into transcript coordinates.
 
@@ -147,7 +146,7 @@ quant_files = file.path(data_dir, sample_names, "quant.sf")
 file.exists(quant_files)
 ```
 
-Load the transcript level estimated counts via tximport; in our case counts were aligned with *salmon*, but other tools are also accepted (e.g., *kallisto*).
+Load the transcript level estimated counts via tximport.
 ```{r}
 library(tximport)
 txi = tximport(files = quant_files, type = "salmon", txOut = TRUE)
