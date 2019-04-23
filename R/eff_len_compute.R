@@ -12,7 +12,7 @@
 #' data_dir = system.file("extdata", package = "BANDITS")
 #' 
 #' # Specify the directory of the transcript level estimated counts.
-#' quant_files = file.path(data_dir, paste0("sample", seq_len(4)), "quant.sf")
+#' quant_files = file.path(data_dir, "STAR-salmon", paste0("sample", seq_len(4)), "quant.sf")
 #' 
 #' # Load the transcript level estimated counts via tximport:
 #' library(tximport)

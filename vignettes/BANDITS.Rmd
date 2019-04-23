@@ -73,20 +73,18 @@ devtools::install_github("SimoneTiberi/BANDITS",
 
 # Aligning reads
 The package inputs the equivalence classes and respective counts.
-These can be obtained by aligning reads either directly to a reference transcriptome with pseudo-alignmers, such as *salmon* [@salmon], or to a reference genome with splice-aware genome alignment algorithms, such as *STAR* [@STAR], and checking the transcripts compatible with each genome alignment (e.g., via *salmon*).
+These can be obtained by aligning reads either directly to a reference transcriptome with pseudo-alignmers, via *salmon* [@salmon] or *kallisto* [@kallisto], or to a reference genome with splice-aware genome alignment algorithms, via *STAR* [@STAR], and checking the transcripts compatible with each genome alignment with *salmon*.
 
-NOTE: currently *BANDITS* only inputs equivalence classes computed from *salmon*; hence it is possible to align reads with *STAR* or *salmon* and, in either case, compute the equivalence classes via *salmon*.
+NOTE: when using *salmon*, use the option `--dumpEq` to obtain the equivalence classes, when using *STAR*, use the option `--quantMode TranscriptomeSAM` to obtain alignments translated into transcript coordinates, and when using *kallisto*, run both `kallisto quant` and `kallisto pseudo` to obtain the transcript estimated counts and equivalence classes, respectively.
 
-Importantly, when using *salmon*, use the option `--dumpEq` to obtain the equivalence classes, and when using *STAR*, use the option `--quantMode TranscriptomeSAM` to obtain alignments translated into transcript coordinates.
-
-The file [README](https://github.com/SimoneTiberi/BANDITS/blob/master/README.md) provides two pipelines to align reads.
+The file [README](https://github.com/SimoneTiberi/BANDITS/blob/master/README.md) provides three pipelines for aligning reads with *salmon*, *kallisto* and *STAR*.
 
 # Gene-transcript matching
 Further to the equivalence classes, our tool requires the matching between transcript and gene ids, compatible with the genome or transcriptome used to align reads.
 There are multiple ways to compute a gene-transcript compatibility matrix; below we show two examples to create it, accoriding to whether reads are aligned with a genome and transcriptome aligner.
 Bear in mind that the example code below will not work on any given gtf and fasta file and adjustments might be needed; alternative approaches to compute gene-transcript matchings are illustrated in *tximport* [@tximport] vignette.
 
-If the reads are aligned to the genome first, we can compute a gene-transcript association from the gtf file via *GenomicFeatures* [@GenomicFeatures] library.
+If the reads are aligned to the genome first (with *STAR*), we can compute a gene-transcript association from the gtf file via *GenomicFeatures* [@GenomicFeatures] library.
 Here we provide an example code:
 ```{r eval=FALSE}
 suppressMessages(library(GenomicFeatures))
@@ -101,7 +99,7 @@ gene_tr_id_gtf = gene_tr_id_gtf[ rowSums( is.na(gene_tr_id_gtf)) == 0, ]
 gene_tr_id_gtf = unique(gene_tr_id_gtf)
 ```
 
-If the reads are aligned directly to the transcriptome, we compute a gene-transcript association from the cDNA fasta file via *Biostrings* [@Biostrings] library.
+If the reads are aligned directly to the transcriptome (with *salmon* or *kallisto*), we compute a gene-transcript association from the cDNA fasta file via *Biostrings* [@Biostrings] library.
 Here we provide an example code:
 ```{r eval=FALSE} 
 suppressMessages(library(Biostrings))
@@ -142,7 +140,7 @@ head(gene_tr_id)
 Specify the directory of the transcript level estimated counts.
 ```{r}
 sample_names = paste0("sample", seq_len(4))
-quant_files = file.path(data_dir, sample_names, "quant.sf")
+quant_files = file.path(data_dir, "STAR-salmon", sample_names, "quant.sf")
 file.exists(quant_files)
 ```
 
@@ -168,6 +166,12 @@ levels(samples_design$group)
 
 Here we consider a two-group comparison, however *BANDITS* also allows to compare more than 2 groups.
 
+Before loading the data, we also compute, via `eff_len_compute`, the median effective length of each transcript (the median is computed with respect to the samples).
+```{r}
+eff_len = eff_len_compute(x_eff_len = txi$length)
+head(eff_len)
+```
+
 ## Optional (recommended): transcript pre-filtering
 Pre-filtering lowly abundant transcripts was found to improve performance of differential splicing methods; furthermore, by simplifying the inferential problem, it also leads to a significant reduction in the computational cost of our method.
 Albeit not strictly required, we highly suggest to pre-filter transcripts.
@@ -188,14 +192,12 @@ head(transcripts_to_keep)
 ```
 
 ## Load the data
-Before loading the data, we compute, via `eff_len_compute`, the median effective length of each transcript (the median is computed with respect to the samples).
-```{r}
-eff_len = eff_len_compute(x_eff_len = txi$length)
-```
+Below we illustrate how to load the equivalence classes computed with `salmon` or `kallisto`.
 
-We then specify the path to the equivalence classes in `equiv_classes_files`.
+### salmon input
+We specify the path to the equivalence classes computed by `salmon` in `equiv_classes_files`.
 ```{r}
-equiv_classes_files = file.path(data_dir, sample_names, 
+equiv_classes_files = file.path(data_dir, "STAR-salmon", sample_names, 
                                 "aux_info", "eq_classes.txt")
 file.exists(equiv_classes_files)
 ```
@@ -210,10 +212,14 @@ We then import the equivalence classes and respective counts, and create a `BAND
 When providing `transcripts_to_keep`, the function filters internally transcripts that are not in the vector.
 When filtering transripts, we suggest to parallelize computations and use one core per sample (i.e., `n_cores = length(path_to_eq_classes)`).
 Since at least 2 transcripts are necessary to study differential splicing, genes with a single transcript are not analyzed.
+
+In our example data, reads were aligned to the genome with *STAR*, and *salmon* was then used to compute the equivalence classes (and quantify transcript abundance) on the aligned reads; therefore we set `salmon_or_kallisto = "salmon"`.
 ```{r}
-input_data = create_data(gene_to_transcript = gene_tr_id,
-                         path_to_eq_classes = equiv_classes_files,
-                         eff_len = eff_len, n_cores = 2,
+input_data = create_data(salmon_or_kallisto = "salmon",
+                         gene_to_transcript = gene_tr_id,
+                         salmon_path_to_eq_classes = equiv_classes_files,
+                         eff_len = eff_len, 
+                         n_cores = 2,
                          transcripts_to_keep = transcripts_to_keep)
 ```
 
@@ -223,6 +229,43 @@ After loading the data, with `filter_genes(data, min_counts_per_gene = 20)`, we 
 ```{r}
 input_data = filter_genes(input_data, min_counts_per_gene = 20)
 ```
+
+
+### kallisto input
+When reads have been aligned with `kallisto`, we proceed in a very similar way as above.
+
+We specify the path to the equivalence classes (`kallisto_equiv_classes`) and respective counts (`kallisto_equiv_counts`) computed by `kallisto`.
+```{r}
+kallisto_equiv_classes = file.path(data_dir, "kallisto", sample_names, "pseudoalignments.ec")
+kallisto_equiv_counts  = file.path(data_dir, "kallisto", sample_names, "pseudoalignments.tsv")
+file.exists(kallisto_equiv_classes); file.exists(kallisto_equiv_counts)
+```
+
+Warning: as above, the sample names in `kallisto_equiv_classes` and `kallisto_equiv_classes` must have the same order as those in the design object, containted in `samples_design`.
+```{r}
+kallisto_equiv_classes; kallisto_equiv_counts
+samples_design$sample_id
+```
+
+As above, we import the equivalence classes and respective counts, and create a `BANDITS_data` object via `create_data`.
+```{r}
+input_data_2 = create_data(salmon_or_kallisto = "kallisto",
+                           gene_to_transcript = gene_tr_id,
+                           kallisto_equiv_classes = kallisto_equiv_classes,
+                           kallisto_equiv_counts = kallisto_equiv_counts,
+                           kallisto_counts = counts,
+                           eff_len = eff_len, n_cores = 2,
+                           transcripts_to_keep = transcripts_to_keep)
+input_data_2
+```
+
+If transcripts pre-filtering is not wanted, do not specify `transcripts_to_keep` parameter.
+
+After loading the data, with `filter_genes(data, min_counts_per_gene = 20)`, we remove genes with less than 20 counts overall (i.e.,  considering all equivalence classes across all samples).
+```{r}
+input_data_2 = filter_genes(input_data_2, min_counts_per_gene = 20)
+```
+
 
 ## Optional (recommended): infer an informative prior for the precision parameter
 In this Section we illustrate how to formulate an informative prior for the precision parameter 

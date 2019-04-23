@@ -2,17 +2,27 @@
 #'
 #' \code{create_data} imports the equivalence classes and create a 'BANDITS_data' object.
 #' 
+#' 
+#' @param salmon_or_kallisto a character string indicating the input data: 'salmon' or 'kallisto'.
 #' @param gene_to_transcript a matrix or data.frame with a list of gene-to-transcript correspondances.
 #' The first column represents the gene id, while the second one contains the transcript id.
-#' @param path_to_eq_classes a vector of length equals to the number of samples: 
-#' each element indicates the path to the equivalence classes of the respective sample.
+#' @param salmon_path_to_eq_classes (for salmon input only) a vector of length equals to the number of samples: 
+#' each element indicates the path to the equivalence classes of the respective sample (computed by salmon).
+#' @param kallisto_equiv_classes (for kallisto input only) a vector of length equals to the number of samples: 
+#' each element indicates the path to the equivalence classes ('.ec' files) of the respective sample (computed by kallisto).
+#' @param kallisto_equiv_counts (for kallisto input only) a vector of length equals to the number of samples: 
+#' each element indicates the path to the counts of the equivalence classes ('.tsv' files) of the respective sample (computed by kallisto).
+#' @param kallisto_counts (for kallisto input only) a matrix or data.frame, 
+#' with 1 column per sample and 1 row per transcript, 
+#' containing the estimated abundances for each transcript in each sample, computed by kallisto.
+#' The matrix must be unfiltered and the order or rows must be unchanged.
 #' @param eff_len a vector containing the effective length of transcripts; the vector names indicate the transcript ids.
 #' Ideally, created via \code{\link{eff_len_compute}}.
 #' @param n_cores the number of cores to parallelize the tasks on.
-#' It is highly suggested to use at least one core per sample (default).
+#' It is highly suggested to use at least one core per sample (default if not specificied by the user).
 #' @param transcripts_to_keep a vector containing the list of transcripts to keep.
 #' Ideally, created via \code{\link{filter_transcripts}}.
-#' @param max_genes_per_group, an integer number specifying the maximum number of genes that each group can contain.
+#' @param max_genes_per_group an integer number specifying the maximum number of genes that each group can contain.
 #' When equivalence classes contain transcripts from distinct genes, these genes are analyzed together.
 #' For computational reasons, 'max_genes_per_group' sets a limit to the number of genes that each group can contain.
 #' 
@@ -26,7 +36,7 @@
 #' 
 #' # Specify the directory of the transcript level estimated counts.
 #' sample_names = paste0("sample", seq_len(4))
-#' quant_files = file.path(data_dir, sample_names, "quant.sf")
+#' quant_files = file.path(data_dir, "STAR-salmon", sample_names, "quant.sf")
 #' 
 #' # Load the transcript level estimated counts via tximport:
 #' library(tximport)
@@ -44,25 +54,53 @@
 #' eff_len = eff_len_compute(x_eff_len = txi$length)
 #' 
 #' # specify the path to the equivalence classes:
-#' equiv_classes_files = file.path(data_dir, sample_names, "aux_info", "eq_classes.txt")
+#' equiv_classes_files = file.path(data_dir, "STAR-salmon", sample_names, "aux_info", "eq_classes.txt")
 #' 
-#' # create data and filter internally lowly abundant transcripts:
-#' input_data = create_data(gene_to_transcript = gene_tr_id,
-#'                            path_to_eq_classes = equiv_classes_files, eff_len = eff_len, 
-#'                            n_cores = 2,
-#'                            transcripts_to_keep = transcripts_to_keep)
+#' # create data from 'salmon' and filter internally lowly abundant transcripts:
+#' input_data = create_data(salmon_or_kallisto = "salmon",
+#'                          gene_to_transcript = gene_tr_id,
+#'                          salmon_path_to_eq_classes = equiv_classes_files,
+#'                          eff_len = eff_len, 
+#'                          n_cores = 2,
+#'                          transcripts_to_keep = transcripts_to_keep)
 #' input_data
+#' 
+#' # create data from 'kallisto' and filter internally lowly abundant transcripts:
+#' kallisto_equiv_classes = file.path(data_dir, "kallisto", sample_names, "pseudoalignments.ec")
+#' kallisto_equiv_counts  = file.path(data_dir, "kallisto", sample_names, "pseudoalignments.tsv")
+#' 
+#' input_data_2 = create_data(salmon_or_kallisto = "kallisto",
+#'                           gene_to_transcript = gene_tr_id,
+#'                           kallisto_equiv_classes = kallisto_equiv_classes,
+#'                           kallisto_equiv_counts = kallisto_equiv_counts,
+#'                           kallisto_counts = counts,
+#'                           eff_len = eff_len, n_cores = 2,
+#'                           transcripts_to_keep = transcripts_to_keep)
+#' input_data_2
 #' 
 #' @author Simone Tiberi \email{simone.tiberi@uzh.ch}
 #' 
 #' @seealso \code{\link{eff_len_compute}}, \code{\link{filter_transcripts}}, \code{\link{filter_genes}}, \code{\linkS4class{BANDITS_data}}
 #' 
 #' @export
-create_data = function(gene_to_transcript,
-                       path_to_eq_classes,
-                       eff_len, n_cores = length(path_to_eq_classes), 
+create_data = function(salmon_or_kallisto,
+                       gene_to_transcript,
+                       salmon_path_to_eq_classes = NULL,
+                       kallisto_equiv_classes = NULL,
+                       kallisto_equiv_counts = NULL,
+                       kallisto_counts = NULL,
+                       eff_len,
+                       n_cores = NULL, 
                        transcripts_to_keep = NULL,
                        max_genes_per_group = 50){
+  # wrapper to call the correct function: salmon_create_data (identical to the one already created) or kallisto_create_data (the one below)
+  cond_salmon_or_kallisto = (length(salmon_or_kallisto) == 1) & is.character(salmon_or_kallisto) & (salmon_or_kallisto %in% c("salmon", "kallisto"))
+  
+  if( !cond_salmon_or_kallisto ){
+    message("'salmon_or_kallisto' must be a character string indicating the input data as: 'salmon' or 'kallisto'")
+    return(NULL)
+  }
+  
   # check that gene_to_transcript is a matrix or data.frame object
   if( !is.data.frame(gene_to_transcript) & !is.matrix(gene_to_transcript)  ){
     message("'gene_to_transcript' must be a matrix or data.frame")
@@ -74,31 +112,33 @@ create_data = function(gene_to_transcript,
     return(NULL)
   }
   
-  if( !all(file.exists(path_to_eq_classes)) ){ # if at least 1 file not found
-    message("'path_to_eq_classes' files not found")
-    return(NULL)
-  }
-  
   if( !all( names(eff_len) %in% gene_to_transcript[,2])  ){
     message("All transcript names in 'names(eff_len)' must be in 'gene_to_transcript[,2]'")
     return(NULL)
   }
-  
-  N = length(path_to_eq_classes)
   
   if(max_genes_per_group > 100){
     message("'max_genes_per_group' can be at most 100")
     return(NULL)
   }
   
-  # From the truth table I take the Transcript_id and associated Gene_id.
-  Gene_id = as.character(gene_to_transcript[,1]); Tr_id = as.character(gene_to_transcript[,2]) 
+  # define the number of parellel cores (if left unspecified):
+  if(is.null(n_cores)){ 
+    n_cores = ifelse(salmon_or_kallisto == "salmon", length(salmon_path_to_eq_classes), length(kallisto_equiv_classes))
+  }
   
-  # MAKE SURE THAT "_" is not present in the list of transcript ids:
-  # otherwise crease a longer list of "_".
+  # initialize parallel cores (if n_cores > 1)
+  if( n_cores > 1.5){ # if n_cores > 1, I use parallel computing tools
+    suppressWarnings({
+      cl = makeCluster(n_cores)
+    })
+  }
+  
+  # calculate the separator (1 or more _)
   if(is.null(transcripts_to_keep)){
     sep = "_"
     while(TRUE){
+      Tr_id = as.character(gene_to_transcript[,2]) 
       cond = sum( vapply(Tr_id, function(x){  grepl(sep, x, fixed=TRUE) }, FUN.VALUE = logical(1)) ) == 0
       # sum(sapply(Tr_id, function(x){  grepl(sep, x, fixed=TRUE) })) == 0
       if(cond){
@@ -118,27 +158,30 @@ create_data = function(gene_to_transcript,
     }
   }
   
-  if( n_cores > 1.5){ # if n_cores > 1, I use parallel computing tools
-    suppressWarnings({
-      cl = makeCluster(n_cores);
-    })
-    
-    if(is.null(transcripts_to_keep)){
-      x = parLapply(cl = cl, X = path_to_eq_classes, fun = read_eq_classes, sep = sep)
-    }else{ # if transcripts_to_keep have been specified, I filter them out from the equivalence classes:
-      x = parLapply(cl = cl, X = path_to_eq_classes, fun = read_eq_classes_filteringTranscripts, transcripts_to_keep = transcripts_to_keep, sep = sep)
-    }
-    
-  }else{
-    
-    if(is.null(transcripts_to_keep)){
-      x = lapply(X = path_to_eq_classes, FUN = read_eq_classes, sep = sep)
-    }else{ # if transcripts_to_keep have been specified, I filter them out from the equivalence classes:
-      x = lapply(X = path_to_eq_classes, FUN = read_eq_classes_filteringTranscripts, transcripts_to_keep = transcripts_to_keep, sep = sep)
-    }
+  # load the data:
+  if(salmon_or_kallisto == "salmon"){ # load salmon equivalence classes:
+    x = load_salmon_data(sep = sep,
+                         path_to_eq_classes = salmon_path_to_eq_classes,
+                         n_cores = n_cores, cl = cl,
+                         transcripts_to_keep = transcripts_to_keep)
+  }else{ # load kallisto equivalence classes:
+    x = load_kallisto_data(sep = sep,
+                           kallisto_equiv_classes = kallisto_equiv_classes,
+                           kallisto_equiv_counts = kallisto_equiv_counts,
+                           kallisto_counts = kallisto_counts,
+                           n_cores = n_cores, cl = cl, 
+                           transcripts_to_keep = transcripts_to_keep)
+  }
+  
+  if(is.null(x)){ # if the object is NULL, return it
+    return(x)
   }
   
   message("Data has been loaded")
+  
+  N = length(x)
+  # From the truth table I take the Transcript_id and associated Gene_id.
+  Gene_id = as.character(gene_to_transcript[,1]); Tr_id = as.character(gene_to_transcript[,2]) 
   
   # merge the ids of all classes here:
   all_classes = unique( unlist( lapply(x, function(y){y$class_ids}) ) )
@@ -466,16 +509,16 @@ create_data = function(gene_to_transcript,
     do.call(rbind, counts_split_per_gene_Together[x])
   })
   #counts_ALL_together_per_GROUP = lapply(classes_associated_to_GROUPs, function(x){
-    #res = counts_split_per_gene_Together[[x[1]]]
-    # loop only IF length(x) > 1 !!!
-    # otherwise it'll create a new record, identical to the previous one
-    #if(length(x) > 1){
-    #  for(i in 2:length(x)){
-    #    res = rbind(res, counts_split_per_gene_Together[[x[i]]])
-    #  }
-    #  # try to replace the for loop with: do.call(rbind, counts_split_per_gene_Together[x])
-    #}
-    #res
+  #res = counts_split_per_gene_Together[[x[1]]]
+  # loop only IF length(x) > 1 !!!
+  # otherwise it'll create a new record, identical to the previous one
+  #if(length(x) > 1){
+  #  for(i in 2:length(x)){
+  #    res = rbind(res, counts_split_per_gene_Together[[x[i]]])
+  #  }
+  #  # try to replace the for loop with: do.call(rbind, counts_split_per_gene_Together[x])
+  #}
+  #res
   #})
   
   classes_ALL_together_per_GROUP = lapply(classes_associated_to_GROUPs, function(x){
@@ -637,89 +680,4 @@ create_data = function(gene_to_transcript,
   
   # return results into a BANDITS_data object:
   return(data)
-}
-
-# SEPARATE FUNCTION FROM create_data; make it generic to hold with ANY input (Salmon, kallisto, etc...)
-read_eq_classes = function(fn, sep){
-  fr = fread(fn, sep = " ", quote = "", header = FALSE)
-  ids = fr$V1[3:(as.integer(fr$V1[1])+2)] # vector with all transcript ids
-  ecs = fr$V1[(as.integer(fr$V1[1])+3):nrow(fr)]
-  ecs.s = strsplit(ecs,"\t",fixed=TRUE)
-  
-  cnt = as.integer(vapply(ecs.s, last, FUN.VALUE = character(1)))
-  # as.integer(sapply(ecs.s, last)) # counts for each equiv class
-  trans = lapply(ecs.s, function(u) 1+as.integer(u[2:(length(u)-1)]))
-  # sapply(ecs.s, function(u) 1+as.integer(u[2:(length(u)-1)]))
-  
-  class_ids = vapply(trans, function(u) paste(sort(ids[unique(u)]),collapse=sep), FUN.VALUE = "id") # I create the id for the class, made of all transcripts of the class separated by _
-  
-  # check if there are any duplicated classes:  
-  if( sum(duplicated(class_ids)) > 0.5 ){ # use the other method, with transcripts_to_keep = all transcripts
-    return( read_eq_classes_filteringTranscripts(fn = fn, transcripts_to_keep = unique(ids),  sep = sep) )
-  }
-  
-  list(counts=cnt, class_ids=class_ids)
-}
-
-# Make function to import eq_classed from kallisto too!
-# Load classes with fread in a separate function.
-read_eq_classes_filteringTranscripts = function(fn, transcripts_to_keep, sep) {
-  fr = fread(fn, sep = " ", quote = "", header = FALSE)
-  ids = fr$V1[3:(as.integer(fr$V1[1])+2)] # vector with all transcript ids
-  ecs = fr$V1[(as.integer(fr$V1[1])+3):nrow(fr)]
-  ecs.s = strsplit(ecs,"\t",fixed=TRUE)
-  
-  cnt = as.integer(vapply(ecs.s, last, FUN.VALUE = character(1)))
-  # as.integer(sapply(ecs.s, last)) # counts for each equiv class
-  trans = lapply(ecs.s, function(u) 1+as.integer(u[2:(length(u)-1)]))
-  # sapply(ecs.s, function(u) 1+as.integer(u[2:(length(u)-1)]))
-  trans = lapply(trans, as.integer)
-  trans = lapply(trans, unique)
-  
-  # sort maybe not needed, double-check at the end!!!
-  SEL_transcripts  = which(ids %in% transcripts_to_keep)
-
-  #############  #############  #############  #############  #############  #############
-  n = vapply(trans, length, FUN.VALUE = integer(1))
-  # sapply(trans, length)
-  df = data.frame(Class_id=rep(seq_along(n), n), Tr_id = unlist(trans))
-  
-  #df = df[df$Tr_id %in% SEL_transcripts, ]
-  #trans_sel = split(df$Tr_id, df$Class_id)
-  
-  # ALTERNATIVE trans_sel computation (much faster):
-  df$Tr_id_SEL = ifelse(df$Tr_id %in% SEL_transcripts, df$Tr_id, NA)
-  trans_sel = split(df$Tr_id_SEL, df$Class_id)
-  
-  trans_sel = lapply(trans_sel, function(x) x[!is.na(x)])
-  # sapply(trans_sel, function(x) x[!is.na(x)])
-  
-  #############  #############  #############  #############  #############  #############
-  # Now I filter out classes with NO transcripts (where all transcripts were filtered out):
-  SEL_classes = {vapply(trans_sel, length, FUN.VALUE = integer(1)) > 0.5} # if length == 0, I have 0 transcripts in a class
-  
-  class_ids_sel = vapply(trans_sel[SEL_classes], function(u) paste(sort(ids[u]),collapse=sep), FUN.VALUE = "id") # I create the id for the class, made of all transcripts of the class separated by _
-  
-  cnt_sel = cnt[SEL_classes]
-  
-  # do UNIQUE of classes:
-  # I CAN TURN class_ids_sel A NUMERIC ID (factor):
-  class_ids_sel_num = as.numeric(factor( class_ids_sel ))
-  DUPS = duplicated(class_ids_sel_num)
-  class_ids_sel_unique_num = class_ids_sel_num[DUPS == FALSE]
-  
-  # SUM up counts of repeated classes:
-  cnt_sel_unique = cnt_sel[DUPS == FALSE] # I filter the counts of the unique classes
-  cnt_sel_DUPS   = cnt_sel[DUPS] # I filter the counts of the unique classes
-  
-  cnt_sel_unique = vapply(seq_along(class_ids_sel_unique_num), function(i){
-    match_dups = class_ids_sel_num[DUPS] == class_ids_sel_unique_num[i] # I look for the matching between the unique classes and duplicatd ones (eliminated)
-    if(sum(match_dups) > 0){
-      cnt_sel_unique[i] = cnt_sel_unique[i] + sum(cnt_sel_DUPS[match_dups]) # I add the counts of the corresponding duplicated classes
-    }
-    cnt_sel_unique[i]
-  }, FUN.VALUE = integer(1))
-  #  2.5 times faster than previous cnt_sel_unique computation!
-  
-  list(counts=cnt_sel_unique, class_ids=class_ids_sel[DUPS == FALSE])
 }

@@ -3,19 +3,22 @@ test_that("create_data() works faultlessly.", {
 
   data_dir = system.file("extdata", package = "BANDITS")
   sample_name = paste0("sample", 1)
-  equiv_classes_files = file.path(data_dir, sample_name, 
+  equiv_classes_files = file.path(data_dir, "STAR-salmon", sample_name, 
                                   "aux_info", "eq_classes.txt")
   
-  quant_files = file.path(data_dir, sample_name, "quant.sf")
+  quant_files = file.path(data_dir, "STAR-salmon", sample_name, "quant.sf")
   
   txi = tximport::tximport(files = quant_files, type = "salmon", txOut = TRUE)
   
   eff_len = eff_len_compute(x_eff_len = txi$length)
 
-  input_data = create_data(gene_to_transcript = gene_tr_id,
-                           path_to_eq_classes = equiv_classes_files,
-                           eff_len = eff_len, n_cores = 1,
+  input_data = create_data(salmon_or_kallisto = "salmon",
+                           gene_to_transcript = gene_tr_id,
+                           salmon_path_to_eq_classes = equiv_classes_files,
+                           eff_len = eff_len, 
+                           n_cores = 1,
                            transcripts_to_keep = NULL)
+  
   
   expect_is(input_data, "BANDITS_data")
   expect_is(genes(input_data)[[1]], "character")

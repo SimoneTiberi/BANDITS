@@ -29,7 +29,7 @@
 #' 
 #' # Load the transcript level estimated counts via tximport:
 #' library(tximport)
-#' quant_files = file.path(data_dir, paste0("sample", seq_len(4)), "quant.sf")
+#' quant_files = file.path(data_dir, "STAR-salmon", paste0("sample", seq_len(4)), "quant.sf")
 #' txi = tximport(files = quant_files, type = "salmon", txOut = TRUE)
 #' counts = txi$counts
 #' 
