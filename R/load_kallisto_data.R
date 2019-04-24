@@ -72,7 +72,12 @@ kallisto_read_eq_classes = function(X, sep, kallisto_equiv_classes, kallisto_equ
   
   # check if there are any duplicated classes:  
   if( sum(duplicated(class_ids)) > 0.5 ){ # use the other method, with transcripts_to_keep = all transcripts
-    return( read_eq_classes_filteringTranscripts(fn = fn, transcripts_to_keep = unique(kallisto_transcript_names),  sep = sep) )
+    return( kallisto_read_eq_classes_filteringTranscripts(X = X, 
+                                                          transcripts_to_keep = unique(kallisto_transcript_names), 
+                                                          sep = sep,
+                                                          kallisto_equiv_classes = kallisto_equiv_classes, 
+                                                          kallisto_equiv_counts = kallisto_equiv_counts,
+                                                          kallisto_transcript_names = kallisto_transcript_names) )
   }
   
   list(counts=cnt, class_ids=class_ids)

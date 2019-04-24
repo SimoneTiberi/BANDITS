@@ -47,7 +47,7 @@ salmon_read_eq_classes = function(fn, sep){
   
   # check if there are any duplicated classes:  
   if( sum(duplicated(class_ids)) > 0.5 ){ # use the other method, with transcripts_to_keep = all transcripts
-    return( read_eq_classes_filteringTranscripts(fn = fn, transcripts_to_keep = unique(ids),  sep = sep) )
+    return( salmon_read_eq_classes_filteringTranscripts(fn = fn, transcripts_to_keep = unique(ids),  sep = sep) )
   }
   
   list(counts=cnt, class_ids=class_ids)

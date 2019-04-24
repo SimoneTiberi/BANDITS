@@ -3,7 +3,7 @@
 via differential transcript usage (DTU), 
 between two or more conditions.
 The method uses a Bayesian hierarchical framework, which allows for sample specific proportions
-in a Dirichlet-Multinomial model, and samples the allocation of fragments to the transcripts.
+in a Dirichlet-multinomial model, and samples the allocation of fragments to the transcripts.
 Parameters are inferred via Markov chain Monte Carlo (MCMC) techniques and a DTU test is performed 
 via a multivariate Wald test on the posterior densities for the average relative abundance of transcripts.
 
