@@ -8,7 +8,7 @@ Parameters are inferred via Markov chain Monte Carlo (MCMC) techniques and a DTU
 via a multivariate Wald test on the posterior densities for the average relative abundance of transcripts.
 
 ## Bioconductor installation 
-`BANDITS` is available on [Bioconductor](https://www.bioconductor.org/packages/release/bioc/html/BANDITS.html) and can be installed with the command:
+`BANDITS` is available on [Bioconductor](https://bioconductor.org/packages/BANDITS) and can be installed with the command:
 ``` r
 if (!requireNamespace("BiocManager", quietly=TRUE))
     install.packages("BiocManager")
