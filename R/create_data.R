@@ -393,8 +393,14 @@ create_data = function(salmon_or_kallisto,
       Ngenes = vapply(genes_in_classes_split_per_gene_Together[classes_bigGroup], length, FUN.VALUE = integer(1))
       # sapply(genes_in_classes_split_per_gene_Together[classes_bigGroup], length)
       Class  = rep(classes_tmp, Ngenes)
+      Class = unname(Class, force = TRUE) # remove names of top lists of Class
+      Class = lapply(Class, unname, force = TRUE) # remove names of each list in Class
+      # REMOVE NAMES OF OBJECTS: otherwise it'll crash (names too long!).
+      
       Counts = rep(counts_split_per_gene_Together[classes_bigGroup], vapply(genes_in_classes_split_per_gene_Together[classes_bigGroup], length, FUN.VALUE = integer(1)))
       # sapply(genes_in_classes_split_per_gene_Together[classes_bigGroup], length))
+      Counts = unname(Counts, force = TRUE)
+      # REMOVE NAMES OF OBJECTS: otherwise it'll crash (names too long!).
       
       class = do.call(c, Class)
       gene = rep(Gene, vapply(Class, length, FUN.VALUE = integer(1)) )
