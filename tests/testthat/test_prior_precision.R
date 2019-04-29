@@ -9,9 +9,7 @@ test_that("prior_precision() works faultlessly.", {
   
   precision = prior_precision(gene_to_transcript = gene_tr_id,
                               transcript_counts = counts,
-                              min_transcript_proportion = 0.01,
-                              min_transcript_counts = 10,
-                              min_gene_counts = 20, n_cores = 2)
+                              n_cores = 2)
 
   expect_is(precision, "list")
   expect_is(precision$prior, "numeric")
