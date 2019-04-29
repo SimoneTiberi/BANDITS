@@ -9,10 +9,9 @@
 #' The first column represents the gene id, while the second one contains the transcript id.
 #' @param transcript_counts a matrix or data.frame, with 1 column per sample and 1 row per transcript, 
 #' containing the estimated abundances for each transcript in each sample.
-#' @param min_transcript_proportion the minimum relative abundance (i.e., proportion) of a transcript in a gene.
-#' @param min_transcript_counts the minimum overall abundance of a transcript (adding counts from all samples).
-#' @param min_gene_counts the minimum overall abundance of a gene (adding counts from all samples).
 #' @param n_cores the number of cores to parallelize the tasks on.
+#' @param transcripts_to_keep a vector containing the list of transcripts to keep.
+#' Ideally, created via \code{\link{filter_transcripts}}.
 #' 
 #' @return A list with 2 objects containing:
 #' \itemize{
@@ -33,14 +32,19 @@
 #' txi = tximport(files = quant_files, type = "salmon", txOut = TRUE)
 #' counts = txi$counts
 #' 
+#' # Optional (recommended): transcript pre-filtering
+#' transcripts_to_keep = filter_transcripts(gene_to_transcript = gene_tr_id,
+#'                                          transcript_counts = counts,
+#'                                          min_transcript_proportion = 0.01,
+#'                                          min_transcript_counts = 10,
+#'                                          min_gene_counts = 20)
+#' 
 #' # Infer an informative prior for the precision parameter
-#' # Use the same filtering criteria as in filter_transcripts; 
-#' # if transcript pre-filtering is not performed, set min_transcript_proportion,
-#' # min_transcript_counts and min_gene_counts to 0.
+#' # Use the same filtering criteria as in 'create_data', by choosing the same argument for 'transcripts_to_keep'.
+#' # If transcript pre-filtering is not performed, leave 'transcripts_to_keep' unspecified.
 #' set.seed(61217)
 #' precision = prior_precision(gene_to_transcript = gene_tr_id, transcript_counts = counts,
-#'                             min_transcript_proportion = 0.01, min_transcript_counts = 10,
-#'                             min_gene_counts = 20, n_cores = 2)
+#'                             n_cores = 2, transcripts_to_keep = transcripts_to_keep)
 #' precision$prior
 #' head(precision$genewise_log_precision)
 #' 
@@ -49,9 +53,10 @@
 #' @seealso \code{\link{test_DTU}}, \code{\link{plot_precision}}
 #' 
 #' @export
-prior_precision = function(gene_to_transcript, transcript_counts,
-                           min_transcript_proportion = 0.01, min_transcript_counts = 1, 
-                           min_gene_counts = 10, n_cores = 1){
+prior_precision = function(gene_to_transcript,
+                           transcript_counts,
+                           n_cores = 1,
+                           transcripts_to_keep = NULL){
   # check that gene_to_transcript is a matrix or data.frame object
   if( !is.data.frame(gene_to_transcript) & !is.matrix(gene_to_transcript)  ){
     message("'gene_to_transcript' must be a matrix or data.frame")
@@ -79,6 +84,18 @@ prior_precision = function(gene_to_transcript, transcript_counts,
     return(NULL)
   }
   
+  # filter transcripts if 'transcripts_to_keep' is provided:
+  if(!is.null(transcripts_to_keep)){
+    sel = rownames(transcript_counts) %in% transcripts_to_keep
+    
+    if(sum(sel) == 0){
+      message("0 transcripts from 'transcripts_to_keep' were found in 'rownames(transcript_counts)'")
+      return(NULL)
+    }
+    
+    transcript_counts = transcript_counts[sel,]
+  }
+  
   N = ncol(transcript_counts)
   
   matches = match( rownames(transcript_counts), gene_to_transcript[,2] )
@@ -92,9 +109,6 @@ prior_precision = function(gene_to_transcript, transcript_counts,
                        group = "A")
   
   d = dmDSdata(counts = counts_df, samples = samples)
-  
-  d = dmFilter(d, min_gene_expr = min_gene_counts, min_feature_expr = min_transcript_counts,
-               min_feature_prop = min_transcript_proportion)
   
   design = model.matrix(~ 1, data = samples(d))
   

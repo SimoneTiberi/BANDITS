@@ -273,14 +273,13 @@ In this Section we illustrate how to formulate an informative prior for the prec
 Note that this is an optional, yet highly recommended, step.
 
 The `prior_precision` function builds on top of *DRIMSeq*'s [@DRIMSeq] `DRIMSeq::dmPrecision` function which provides genewise estimates of the precision parameter.
-Use the same filtering criteria as in `filter_transcripts`; if transcript pre-filtering is not performed, set `min_transcript_proportion`, `min_transcript_counts` and `min_gene_counts` to 0.
+Use the same filtering criteria as in `create_data`, by choosing the same argument for `transcripts_to_keep`.
+If transcript pre-filtering is not performed, leave `transcripts_to_keep` unspecified.
 ```{r}
 set.seed(61217)
 precision = prior_precision(gene_to_transcript = gene_tr_id,
-                            transcript_counts = counts,
-                            min_transcript_proportion = 0.01,
-                            min_transcript_counts = 10,
-                            min_gene_counts = 20, n_cores = 2)
+                            transcript_counts = counts, n_cores = 2,
+                            transcripts_to_keep = transcripts_to_keep)
 ```
 
 The first element of the result contains the mean and standard deviation of the log-precision estimates.
