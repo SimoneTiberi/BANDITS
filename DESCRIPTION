@@ -15,7 +15,7 @@ biocViews: DifferentialSplicing, AlternativeSplicing, Bayesian, Genetics,
   RNASeq, Sequencing, DifferentialExpression, GeneExpression, MultipleComparison,
   Software, WorkflowStep, Transcription
 License: GPL (>= 3)
-Depends: R (>= 3.6.1)
+Depends: R (>= 3.6.0)
 Imports: Rcpp, doRNG, MASS, data.table, doParallel, parallel, foreach, methods, stats, graphics, ggplot2,
   DRIMSeq, BiocParallel
 LinkingTo: Rcpp, RcppArmadillo
