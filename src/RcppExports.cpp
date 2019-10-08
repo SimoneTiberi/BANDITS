@@ -37,8 +37,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // Rcpp_FULL_Together_Multigroup
-Rcpp::List Rcpp_FULL_Together_Multigroup(unsigned int& R, unsigned int const& burn_in, Rcpp::IntegerVector const& N, unsigned int const& N_groups, double const& mean_log_delta, double const& sd_log_delta, Rcpp::ListOf<Rcpp::ListOf<Rcpp::NumericMatrix>>& pi_new, Rcpp::ListOf<Rcpp::ListOf<Rcpp::NumericMatrix>>& mcmc_alpha, Rcpp::ListOf<Rcpp::ListOf<Rcpp::NumericVector>>& alpha_new, Rcpp::ListOf<Rcpp::ListOf<Rcpp::NumericMatrix>>& chol, Rcpp::ListOf<Rcpp::NumericMatrix> TOT_Y_new, Rcpp::IntegerVector const& K, Rcpp::NumericVector const& l, Rcpp::ListOf<Rcpp::IntegerMatrix> const& f, Rcpp::IntegerMatrix const& exon_id, Rcpp::LogicalVector const& One_transcript, Rcpp::LogicalVector const& one_transcript);
-RcppExport SEXP _BANDITS_Rcpp_FULL_Together_Multigroup(SEXP RSEXP, SEXP burn_inSEXP, SEXP NSEXP, SEXP N_groupsSEXP, SEXP mean_log_deltaSEXP, SEXP sd_log_deltaSEXP, SEXP pi_newSEXP, SEXP mcmc_alphaSEXP, SEXP alpha_newSEXP, SEXP cholSEXP, SEXP TOT_Y_newSEXP, SEXP KSEXP, SEXP lSEXP, SEXP fSEXP, SEXP exon_idSEXP, SEXP One_transcriptSEXP, SEXP one_transcriptSEXP) {
+Rcpp::List Rcpp_FULL_Together_Multigroup(unsigned int& R, unsigned int const& burn_in, Rcpp::IntegerVector const& N, unsigned int const& N_groups, double const& mean_log_delta, double const& sd_log_delta, Rcpp::ListOf<Rcpp::ListOf<Rcpp::NumericMatrix>>& pi_new, Rcpp::ListOf<Rcpp::ListOf<Rcpp::NumericMatrix>>& mcmc_alpha, Rcpp::ListOf<Rcpp::ListOf<Rcpp::NumericVector>>& alpha_new, Rcpp::ListOf<Rcpp::ListOf<Rcpp::NumericMatrix>>& chol, Rcpp::ListOf<Rcpp::NumericMatrix> TOT_Y_new, Rcpp::ListOf<Rcpp::NumericMatrix> precision, Rcpp::IntegerVector const& K, Rcpp::NumericVector const& l, Rcpp::ListOf<Rcpp::IntegerMatrix> const& f, Rcpp::IntegerMatrix const& exon_id, Rcpp::LogicalVector const& One_transcript, Rcpp::LogicalVector const& one_transcript);
+RcppExport SEXP _BANDITS_Rcpp_FULL_Together_Multigroup(SEXP RSEXP, SEXP burn_inSEXP, SEXP NSEXP, SEXP N_groupsSEXP, SEXP mean_log_deltaSEXP, SEXP sd_log_deltaSEXP, SEXP pi_newSEXP, SEXP mcmc_alphaSEXP, SEXP alpha_newSEXP, SEXP cholSEXP, SEXP TOT_Y_newSEXP, SEXP precisionSEXP, SEXP KSEXP, SEXP lSEXP, SEXP fSEXP, SEXP exon_idSEXP, SEXP One_transcriptSEXP, SEXP one_transcriptSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -53,13 +53,14 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< Rcpp::ListOf<Rcpp::ListOf<Rcpp::NumericVector>>& >::type alpha_new(alpha_newSEXP);
     Rcpp::traits::input_parameter< Rcpp::ListOf<Rcpp::ListOf<Rcpp::NumericMatrix>>& >::type chol(cholSEXP);
     Rcpp::traits::input_parameter< Rcpp::ListOf<Rcpp::NumericMatrix> >::type TOT_Y_new(TOT_Y_newSEXP);
+    Rcpp::traits::input_parameter< Rcpp::ListOf<Rcpp::NumericMatrix> >::type precision(precisionSEXP);
     Rcpp::traits::input_parameter< Rcpp::IntegerVector const& >::type K(KSEXP);
     Rcpp::traits::input_parameter< Rcpp::NumericVector const& >::type l(lSEXP);
     Rcpp::traits::input_parameter< Rcpp::ListOf<Rcpp::IntegerMatrix> const& >::type f(fSEXP);
     Rcpp::traits::input_parameter< Rcpp::IntegerMatrix const& >::type exon_id(exon_idSEXP);
     Rcpp::traits::input_parameter< Rcpp::LogicalVector const& >::type One_transcript(One_transcriptSEXP);
     Rcpp::traits::input_parameter< Rcpp::LogicalVector const& >::type one_transcript(one_transcriptSEXP);
-    rcpp_result_gen = Rcpp::wrap(Rcpp_FULL_Together_Multigroup(R, burn_in, N, N_groups, mean_log_delta, sd_log_delta, pi_new, mcmc_alpha, alpha_new, chol, TOT_Y_new, K, l, f, exon_id, One_transcript, one_transcript));
+    rcpp_result_gen = Rcpp::wrap(Rcpp_FULL_Together_Multigroup(R, burn_in, N, N_groups, mean_log_delta, sd_log_delta, pi_new, mcmc_alpha, alpha_new, chol, TOT_Y_new, precision, K, l, f, exon_id, One_transcript, one_transcript));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -112,7 +113,7 @@ END_RCPP
 
 static const R_CallMethodDef CallEntries[] = {
     {"_BANDITS_Rcpp_Together", (DL_FUNC) &_BANDITS_Rcpp_Together, 20},
-    {"_BANDITS_Rcpp_FULL_Together_Multigroup", (DL_FUNC) &_BANDITS_Rcpp_FULL_Together_Multigroup, 17},
+    {"_BANDITS_Rcpp_FULL_Together_Multigroup", (DL_FUNC) &_BANDITS_Rcpp_FULL_Together_Multigroup, 18},
     {"_BANDITS_Rcpp_Unique", (DL_FUNC) &_BANDITS_Rcpp_Unique, 11},
     {"_BANDITS_Rcpp_FULL_Unique_Multigroup", (DL_FUNC) &_BANDITS_Rcpp_FULL_Unique_Multigroup, 15},
     {NULL, NULL, 0}

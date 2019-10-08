@@ -150,6 +150,7 @@ Rcpp::List
                                 Rcpp::ListOf<Rcpp::ListOf<Rcpp::NumericVector>>& alpha_new,
                                 Rcpp::ListOf<Rcpp::ListOf<Rcpp::NumericMatrix>>& chol,
                                 Rcpp::ListOf<Rcpp::NumericMatrix> TOT_Y_new,
+                                Rcpp::ListOf<Rcpp::NumericMatrix> precision,
                                 Rcpp::IntegerVector const& K, // number of transcripts per gene
                                 Rcpp::NumericVector const& l, // double vector of len K
                                 Rcpp::ListOf<Rcpp::IntegerMatrix> const& f,
@@ -419,7 +420,6 @@ Rcpp::List
     Rcpp::NumericVector l_correct;
     Rcpp::NumericVector row;
     
-    
     for (unsigned int g = 0; g < n_genes; ++g) {
       if(g == 0){
         l_correct = l[ Range(0, K[0]-1) ];
@@ -433,6 +433,7 @@ Rcpp::List
           
           for (unsigned int r = burn_in; r < R; ++r) {
             row = Rcpp::exp(mcmc_alpha[g][n](r,_)); // exp to gain the alpha's
+            precision[g](r-burn_in, n) = log(sum(row)); //precision for group A (before deviding row by l)
             // row = row/sum(row); // divide by their sum to get pi_bar
             row = row/l_correct; // divide by the transcript effective length
             mcmc_alpha[g][n](r,_) = row/sum(row); // standardize to obtain proprotions again.
@@ -445,6 +446,7 @@ Rcpp::List
     
     // THIN HERE: return 10^4 values (1.2 * 10^4 for ll).
     return Rcpp::List::create(Rcpp::Named("mcmc") = mcmc_alpha,
-                              Rcpp::Named("log-posterior") = ll[ Range(burn_in, R-1) ]);
+                              Rcpp::Named("log-posterior") = ll[ Range(burn_in, R-1) ],
+                              Rcpp::Named("log-precision") = precision);
   } // return the ll WITH the burn-in
 // the original element pi_new is modified

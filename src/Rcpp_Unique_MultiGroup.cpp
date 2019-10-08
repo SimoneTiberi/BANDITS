@@ -359,9 +359,13 @@ Rcpp::List
     }
     
     Rcpp::NumericVector row(K);
+    Rcpp::NumericMatrix precision(R-burn_in, N_groups); //precision for group A
+    
     for (unsigned int n = 0; n < N_groups; ++n) { // n representing the group id
       for (unsigned int r = burn_in; r < R; ++r) {
         row = Rcpp::exp(mcmc_alpha[n](r,_)); // exp to gain the alpha's
+        precision(r-burn_in, n) = log(sum(row)); //precision for group A (before deviding row by l)
+        
         // row = row/sum(row); // divide by their sum to get pi_bar
         row = row/l; // divide by the transcript effective length
         mcmc_alpha[n](r,_) = row/sum(row); // standardize to obtain proprotions again.
@@ -372,6 +376,7 @@ Rcpp::List
     
     // THIN HERE: return 10^4 values (1.2 * 10^4 for ll).
     return Rcpp::List::create(Rcpp::Named("mcmc") = mcmc_alpha,
-                              Rcpp::Named("log-posterior") = ll[ Range(burn_in, R-1) ]);
+                              Rcpp::Named("log-posterior") = ll[ Range(burn_in, R-1) ],
+                              Rcpp::Named("log-precision") = precision);
   } // return the ll WITH the burn-in
 // the original element pi_new is modified

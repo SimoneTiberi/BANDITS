@@ -29,10 +29,6 @@ wald_DTU_test_MultiGroup_Together = function(f, l, exon_id, N, R, burn_in,
                                          burn_in = burn_in, mean_log_precision = mean_log_precision, sd_log_precision = sd_log_precision)
   
   if(chain[[2]][1] == 0){ # IF the chain didn't converge (3 times), return NULL result:
-    rownames(res_gene) = genes
-    res_transcript = NULL
-    res = list(res_gene, res_transcript)
-    
     return( list(p.vals = NA, convergence = chain[[2]]) )
   }
   
@@ -40,6 +36,15 @@ wald_DTU_test_MultiGroup_Together = function(f, l, exon_id, N, R, burn_in,
   
   if( any(is.na(pvals_res[[1]])) == FALSE){
     if( all( pvals_res[[1]][K>1] > theshold_pval ) ){
+      
+      tmp = matrix(-1, nrow = n_genes, ncol = 1 + 2 * N_groups)
+      tmp[,1] = pvals_res[[1]]
+      tmp[,seq.int(2, N_groups + 1, by = 1)]                = vapply(chain[[3]], function(x){ apply(x, 2, mean)}, FUN.VALUE = numeric(N_groups))
+      tmp[,seq.int(N_groups + 2, 2 * N_groups + 1, by = 1)] = vapply(chain[[3]], function(x){ apply(x, 2, sd)},   FUN.VALUE = numeric(N_groups))
+      rownames(tmp) = genes # gene id to the gene results
+      
+      pvals_res[[1]] = tmp
+      
       # if all genes tested (with at least 2 transcripts) have a p.val[55] > 0.1 I return the p.vals
       return( list(p.vals = pvals_res, convergence = chain[[2]]) ) # return the convergence result too (to check they are all converged with reasonable burn-in).
     }
@@ -52,12 +57,21 @@ wald_DTU_test_MultiGroup_Together = function(f, l, exon_id, N, R, burn_in,
   
   # if chain_2 converged, I add it to the first one, otherwise I don't:
   if(chain_2[[2]][1] == 0){ # IF the second chain didn't converge (three times), return the result from the first one:
+    tmp = matrix(-1, nrow = n_genes, ncol = 1 + 2 * N_groups)
+    tmp[,1] = pvals_res[[1]]
+    tmp[,seq.int(2, N_groups + 1, by = 1)]                = vapply(chain[[3]], function(x){ apply(x, 2, mean)}, FUN.VALUE = numeric(N_groups))
+    tmp[,seq.int(N_groups + 2, 2 * N_groups + 1, by = 1)] = vapply(chain[[3]], function(x){ apply(x, 2, sd)}, FUN.VALUE = numeric(N_groups))
+    rownames(tmp) = genes # gene id to the gene results
+    
+    pvals_res[[1]] = tmp
+    
     return( list(p.vals = pvals_res, convergence = chain[[2]]) ) # return the convergence result too (to check they are all converged with reasonable burn-in).
   }
   
   for(g in seq_len(n_genes) ){
-    for(n in seq_len(N_groups) ){
-      if(K[g] > 1){
+    if(K[g] > 1){
+      chain[[1]] = rbind(chain[[1]], chain_2[[1]])
+      for(n in seq_len(N_groups) ){
         chain[[1]][[g]][[n]] = rbind( chain[[1]][[g]][[n]], chain_2[[1]][[g]][[n]])
       }
     }
@@ -65,6 +79,14 @@ wald_DTU_test_MultiGroup_Together = function(f, l, exon_id, N, R, burn_in,
   
   # I merge the two chains computed independently and return the pvals computed on the two chains merged together.
   pvals_res = pval_compute_Together_MultiGroup(chain[[1]], K = K, n_genes = n_genes, genes = genes, N_groups = N_groups, gene_id = gene_id, transcripts = transcripts)
+  
+  tmp = matrix(-1, nrow = n_genes, ncol = 1 + 2 * N_groups)
+  tmp[,1] = pvals_res[[1]]
+  tmp[,seq.int(2, N_groups + 1, by = 1)]                = vapply(chain[[3]], function(x){ apply(x, 2, mean)}, FUN.VALUE = numeric(N_groups))
+  tmp[,seq.int(N_groups + 2, 2 * N_groups + 1, by = 1)] = vapply(chain[[3]], function(x){ apply(x, 2, sd)}, FUN.VALUE = numeric(N_groups))
+  rownames(tmp) = genes # gene id to the gene results
+  
+  pvals_res[[1]] = tmp
   
   list(p.vals = pvals_res, convergence = chain[[2]]) # return the convergence result too (to check they are all converged with reasonable burn-in).
 }
@@ -93,15 +115,21 @@ MCMC_chain_MultiGroup_Together = function(f, l, exon_id, N, N_groups, n_genes, R
   chol_mat = list()
   # tot:
   TOT_Y_new = list()
+  # log-prec:
+  precision = list()
   
   for(g in seq_len(n_genes) ){
+    if(!One_transcript[g]){
+      precision[[g]] = matrix(NA, nrow = R, ncol = N_groups)
+    }else{
+      precision[[g]] = matrix(NaN, nrow = 1, ncol = N_groups)
+    }
     mcmc_alpha[[g]] = list()
     for(n in seq_len(N_groups) ){
       if(!One_transcript[g]){ # only store the matrix IF more than 1 transcript in the group
         mcmc_alpha[[g]][[n]] = matrix(NA, nrow = R + burn_in, ncol = K[g]) # hyper-parameters of the DM
       }else{
-        mcmc_alpha[[g]][[n]] = matrix(NaN, 1, 1)
-        
+        mcmc_alpha[[g]][[n]] = matrix(NaN, nrow = 1, ncol = 1)
       }
     }
   }
@@ -150,7 +178,7 @@ MCMC_chain_MultiGroup_Together = function(f, l, exon_id, N, N_groups, n_genes, R
   # Run the MCMC fully in Rcpp:
   res = .Call(`_BANDITS_Rcpp_FULL_Together_Multigroup`, R + burn_in, burn_in, N, N_groups,
               mean_log_precision, sd_log_precision, 
-              pi_new, mcmc_alpha, alpha_new, chol_mat, TOT_Y_new, 
+              pi_new, mcmc_alpha, alpha_new, chol_mat, TOT_Y_new, precision,
               K, l, f_list, exon_id, One_transcript, one_transcript)
   
   # Compute the convergence diagnostic:
@@ -164,18 +192,20 @@ MCMC_chain_MultiGroup_Together = function(f, l, exon_id, N, N_groups, n_genes, R
   
   if(convergence[1] == 1){ # if it converged:
     if(convergence[2] > 1){ # remove burn-in estimated by heidel.diag (which is, AT MOST, half of the chain):
-      for(n in seq_len(N_groups) ){
-        for(g in seq_along(K) ){
-          if(K[g] > 1){
+      for(g in seq_along(K) ){
+        if(K[g] > 1){
+          res[[3]][[g]] = res[[3]][[g]][seq.,][-{seq_len(convergence[2]-1)},]
+          for(n in seq_len(N_groups) ){
             res[[1]][[g]][[n]] = res[[1]][[g]][[n]][seq.,][-{seq_len(convergence[2]-1)},]
           }
         }
       }
     }else{ # if convergence[2] == 1, seq. has altready been defined above.
       if(R > 10^4){ # thin if R > 10^4
-        for(n in seq_len(N_groups) ){
-          for(g in seq_along(K)){
-            if(K[g] > 1){
+        for(g in seq_along(K) ){
+          if(K[g] > 1){
+            res[[3]][[g]] = res[[3]][[g]][seq.,]
+            for(n in seq_len(N_groups) ){
               res[[1]][[g]][[n]] = res[[1]][[g]][[n]][seq.,]
             }
           }
@@ -193,7 +223,7 @@ MCMC_chain_MultiGroup_Together = function(f, l, exon_id, N, N_groups, n_genes, R
   # thin results to return 10^4 iterations.
   # thin if R > 10^4 (to return 10^4 values).
   
-  list( res[[1]], convergence )  # I return the list of MCMC chains, excluding the burn-in, and the convergence output
+  list( res[[1]], convergence, res[[3]] )  # I return the list of MCMC chains, excluding the burn-in, and the convergence output
 }
 
 pval_compute_Together_MultiGroup = function(mcmc, K, n_genes, genes, N_groups, gene_id, transcripts){

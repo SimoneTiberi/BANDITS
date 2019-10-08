@@ -39,6 +39,10 @@
 #' and p.values_inverted = sqrt( p.values ) if both conditions have the same dominant transcript;
 #' \item adj.p.values_inverted (only available for 2-group comparisons) is the Benjamini-Hochberg adjusted p.values_inverted, via \code{\link{p.adjust}};
 #' \item DTU_measure (only available for 2-group comparisons) represents a measure of the intensity of changes between conditions.
+#' This measure ranges between 0, when proportions are identical between groups, and 2, when an isoform is always expressed in group A and a different transcript is always chosen in group B;
+#' \item Mean log-prec "group_name" indicates the posterior mean of the logarithm of the Dirichlet precision parameter in group "group_name".
+#' The precision parameter models the degree of over-dispersion between samples: the higher the precision parameter (or its logarithm), the lower the sample-to-sample variability.
+#' \item SD log-prec "group_name" indicates the standard deviation of the logarithm of the Dirichlet precision parameter in group "group_name".
 #' }
 #' 
 #' @slot Transcript_results a \code{data.frame} containing the transcript-level results of the DTU test, structured in the following columns:
@@ -51,7 +55,7 @@
 #' \item Max_Gene_Tr.Adj.p.val is the Benjamini-Hochberg adjusted Max_Gene_Tr.p.val (via \code{\link{p.adjust}});
 #' \item Mean "group_name" indicates the posterior mean of the average relative abundance of the transcript in group "group_name"
 #' (an \code{NaN} value indicates that no data was available for a group to estimate parameters);
-#' \item sd "group_name" indicates the standard deviation of the average relative abundance of the transcript in group "group_name"
+#' \item SD "group_name" indicates the standard deviation of the average relative abundance of the transcript in group "group_name"
 #' (an \code{NaN} value indicates that no data was available for a group to estimate parameters);
 #' this column indicates the variability in the mean estimate and is used to plot a 
 #' Wald type confidence interval for the mean relative abundance via \code{\link{plot_proportions}}.
@@ -188,9 +192,10 @@ setMethod("top_genes", "BANDITS_test", function(x, n = Inf, sort_by_g = "p.value
   }
   
   if(is.null(Gene_results(x)$DTU_measure)){
-    message("Results cannot be sorted by 'DTU_measure': not available for multi-group comparisons.")
+    message("Results cannot be sorted by 'DTU_measure': this feature is only available when two groups are compared.")
     return(NULL)
   }
+  
   # transcript results sorted according to transcript-level p.value
   Gene_results(x)[order(Gene_results(x)$DTU_measure, decreasing = TRUE)[seq_len(n)],] # high DTU_measure on top.
 })
@@ -218,6 +223,12 @@ setMethod("top_transcripts", "BANDITS_test", function(x, n = Inf, sort_by_tr="ge
   if(sort_by_tr == "gene"){ # transcript results sorted according to gene-level p.value
     return(Transcript_results(x)[seq_len(n),])
   }
+  
+  if(is.null(Transcript_results(x)$p.values)){
+    message("Results cannot be sorted by 'transcript': this feature is only available when two or more groups are compared.")
+    return(NULL)
+  }
+  
   # transcript results sorted according to transcript-level p.value
   Transcript_results(x)[order(Transcript_results(x)$p.values)[seq_len(n)],]
 })
@@ -302,12 +313,12 @@ setMethod("plot_proportions", "BANDITS_test", function(x, gene_id,
     return(NULL)
   }
   
-  group_names = levels(x@samples_design$group)
+  group_names = levels(factor(x@samples_design$group))
   
   sel = Transcript_results(x)$Gene_id == gene_id
   
-  means = Transcript_results(x)[sel, grep("Mean", names(Transcript_results(x)))]
-  SD =  Transcript_results(x)[sel, grep("sd", names(Transcript_results(x)))]
+  means = as.matrix(Transcript_results(x)[sel, grep("Mean", names(Transcript_results(x)))])
+  SD =  Transcript_results(x)[sel, grep("SD", names(Transcript_results(x)))]
   n_groups = ncol(means)
   tr_names = Transcript_results(x)$Transcript_id[sel]
   # impose an order to the transcripts (according to the over-all relative abudance):

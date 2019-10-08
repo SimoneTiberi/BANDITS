@@ -32,12 +32,7 @@ wald_DTU_test_Together_FULL = function(f, l, exon_id, N_1, N_2, R, burn_in,
                                    burn_in = burn_in, mean_log_precision = mean_log_precision, sd_log_precision = sd_log_precision)
   
   if(chain[[2]][1] == 0){ # IF the chain didn't converge (3 times), return NULL result:
-    res_gene =  matrix(-1, ncol = 3, nrow  = length(K))
-    rownames(res_gene) = genes
-    res_transcript = NULL
-    res = list(res_gene, res_transcript)
-    
-    return( list(p.vals = NA, convergence = chain[[2]]) )
+    return( list(p.vals = NA, convergence = chain[[2]] ) )
   }
   
   pvals_res = pval_compute_Together_FULL( A = chain[[1]][[1]], B = chain[[1]][[2]],
@@ -48,6 +43,17 @@ wald_DTU_test_Together_FULL = function(f, l, exon_id, N_1, N_2, R, burn_in,
   if( any(is.na(pvals_res[[1]][, 1])) == FALSE ){ # If any p.val is NA, I output a warning and redo the MCMC
     if( all( pvals_res[[1]][K>1, 1] > theshold_pval ) ){
       # if all genes tested (with at least 2 transcripts) have a p.val[55] > 0.1 I return the p.vals
+      n_genes = length(K); # nr of genes in the group
+      
+      # compute the posterior mode and sd of the precision parameter
+      tmp = matrix(-1, nrow = n_genes, ncol = 7)
+      tmp[,c(1,2,3)] = pvals_res[[1]]
+      tmp[,c(4,5)] = vapply(chain[[4]], function(x){ apply(x, 2, mean)}, FUN.VALUE = numeric(n_genes))
+      tmp[,c(6,7)] = vapply(chain[[4]], function(x){ apply(x, 2, sd)}, FUN.VALUE = numeric(n_genes))
+      rownames(tmp) = genes # gene id to the gene results
+      
+      pvals_res[[1]] = tmp
+      
       return( list(p.vals = pvals_res, convergence = chain[[2]]) ) # return the convergence result too (to check they are all converged with reasonable burn-in).
     }
   }else{
@@ -60,19 +66,42 @@ wald_DTU_test_Together_FULL = function(f, l, exon_id, N_1, N_2, R, burn_in,
   
   # if chain_2 converged, I add it to the first one, otherwise I don't:
   if(chain_2[[2]][1] == 0){ # IF the second chain didn't converge (three times), return the result from the first one:
+    # if all genes tested (with at least 2 transcripts) have a p.val[55] > 0.1 I return the p.vals
+    n_genes = length(K); # nr of genes in the group
+    
+    # compute the posterior mode and sd of the precision parameter
+    tmp = matrix(-1, nrow = n_genes, ncol = 7)
+    tmp[,c(1,2,3)] = pvals_res[[1]]
+    tmp[,c(4,5)] = vapply(chain[[4]], function(x){ apply(x, 2, mean)}, FUN.VALUE = numeric(n_genes))
+    tmp[,c(6,7)] = vapply(chain[[4]], function(x){ apply(x, 2, sd)}, FUN.VALUE = numeric(n_genes))
+    rownames(tmp) = genes # gene id to the gene results
+    
+    pvals_res[[1]] = tmp
+    
     return( list(p.vals = pvals_res, convergence = chain[[2]]) ) # return the convergence result too (to check they are all converged with reasonable burn-in).
   }
   
+  # merge the 2 chains together (after excluding burn-in):
   for(g in seq_along(K)){
     if(K[g] > 1){
       chain[[1]][[1]][[g]] = rbind( chain[[1]][[1]][[g]], chain_2[[1]][[1]][[g]])
       chain[[1]][[2]][[g]] = rbind( chain[[1]][[2]][[g]], chain_2[[1]][[2]][[g]])
     }
   }
+  chain[[4]][[1]] = rbind(chain[[4]][[1]], chain_2[[4]][[1]])
+  chain[[4]][[2]] = rbind(chain[[4]][[2]], chain_2[[4]][[2]])
   
   # I merge the two chains computed independently and return the pvals computed on the two chains merged together.
   pvals_res = pval_compute_Together_FULL( A = chain[[1]][[1]], B = chain[[1]][[2]],
                                           K = K, N = N_1+N_2, genes = genes, gene_id = gene_id, transcripts = transcripts)
+  
+  tmp = matrix(-1, nrow = n_genes, ncol = 7)
+  tmp[,c(1,2,3)] = pvals_res[[1]]
+  tmp[,c(4,5)] = vapply(chain[[4]], function(x){ apply(x, 2, mean)}, FUN.VALUE = numeric(n_genes))
+  tmp[,c(6,7)] = vapply(chain[[4]], function(x){ apply(x, 2, sd)}, FUN.VALUE = numeric(n_genes))
+  rownames(tmp) = genes # gene id to the gene results
+  
+  pvals_res[[1]] = tmp
   
   list(p.vals = pvals_res, convergence = chain[[2]]) # return the convergence result too (to check they are all converged with reasonable burn-in).
 }
@@ -145,6 +174,8 @@ MCMC_chain_Together_FULL = function(f, l, exon_id, N_1, N_2, R, K, gene_id, burn
           res[[2]][[g]] = res[[2]][[g]][seq.,][-seq_len(convergence[2]-1),]
         }
       }
+      res[[4]] = res[[4]][seq.,][-seq_len(convergence[2]-1),]
+      res[[5]] = res[[5]][seq.,][-seq_len(convergence[2]-1),]
     }else{ # if convergence[2] == 1, seq. has already been defined above.
       if(R > 10^4){ # thin only if R > 10^4
         for(g in seq_len(n_genes)){
@@ -153,6 +184,8 @@ MCMC_chain_Together_FULL = function(f, l, exon_id, N_1, N_2, R, K, gene_id, burn
             res[[2]][[g]] = res[[2]][[g]][seq.,]
           }
         }
+        res[[4]] = res[[4]][seq.,]
+        res[[5]] = res[[5]][seq.,]
       }
     }
   }else{ # IF not converged, RUN a second chain (once only):
@@ -169,7 +202,7 @@ MCMC_chain_Together_FULL = function(f, l, exon_id, N_1, N_2, R, K, gene_id, burn
   # thin if R > 10^4 (to return 10^4 values).
   
   # save whether it's the first run or not (i.e. whether the convergence test failed).
-  list( res[seq_len(2)], convergence, FIRST_chain ) 
+  list( res[seq_len(2)], convergence, FIRST_chain, res[c(4,5)] ) 
 }
 
 

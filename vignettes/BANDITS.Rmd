@@ -44,16 +44,22 @@ To test for DTU, we compare the average transcript relative abundance between tw
 A statistical test is performed, both, at the gene and transcript level, allowing scientists to investigate what specific transcripts are differentially used in significant genes.
 
 To access the R code used in the vignettes, type:
-```{r eval=FALSE} 
+```{r vignettes, eval=FALSE} 
 browseVignettes("BANDITS")
 ```
 
 
 Questions relative to *BANDITS* should be either written to the *[Bioconductor support site](https://support.bioconductor.org)*, tagging the question with "BANDITS", or reported as a new issue at *[BugReports](https://github.com/SimoneTiberi/BANDITS/issues)*.
 
+To cite BANDITS, type:
+```{r citation} 
+citation("BANDITS")
+```
+
+
 ## Bioconductor installation
 `BANDITS` is available on [Bioconductor](https://www.bioconductor.org/packages/release/bioc/html/BANDITS.html) and can be installed with the command:
-```{r eval=FALSE}
+```{r Bioconductor_installation, eval=FALSE}
 if (!requireNamespace("BiocManager", quietly=TRUE))
   install.packages("BiocManager")
 BiocManager::install("BANDITS")
@@ -61,12 +67,12 @@ BiocManager::install("BANDITS")
 
 ## Devel installation from github
 To install the latest development version of the package from github, use `devtools` (available [here](https://github.com/hadley/devtools)):
-```{r eval=FALSE}
+```{r github_installation, eval=FALSE}
 devtools::install_github("SimoneTiberi/BANDITS")
 ```
 
 To install the package jointly with its vignette remove `--no-build-vignettes` from `build_opts`:
-```{r eval=FALSE}
+```{r github_installation_2, eval=FALSE}
 devtools::install_github("SimoneTiberi/BANDITS",
                          build_opts = c("--no-resave-data", "--no-manual"))
 ```
@@ -86,7 +92,7 @@ Bear in mind that the example code below will not work on any given gtf and fast
 
 If the reads are aligned to the genome first (with *STAR*), we can compute a gene-transcript association from the gtf file via *GenomicFeatures* [@GenomicFeatures] library.
 Here we provide an example code:
-```{r eval=FALSE}
+```{r gene-transcript_from_gtf, eval=FALSE}
 suppressMessages(library(GenomicFeatures))
 gtf_file = system.file("extdata","GTF_files","Aedes_aegypti.partial.gtf",
                        package="GenomicFeatures")
@@ -101,7 +107,7 @@ gene_tr_id_gtf = unique(gene_tr_id_gtf)
 
 If the reads are aligned directly to the transcriptome (with *salmon* or *kallisto*), we compute a gene-transcript association from the cDNA fasta file via *Biostrings* [@Biostrings] library.
 Here we provide an example code:
-```{r eval=FALSE} 
+```{r gene-transcript_from_fasta, eval=FALSE} 
 suppressMessages(library(Biostrings))
 data_dir = system.file("extdata", package = "BANDITS")
 fasta = readDNAStringSet(file.path(data_dir, "Homo_sapiens.GRCh38.cdna.all.1.1.10M.fa.gz"))
@@ -117,13 +123,13 @@ gene_tr_id_fasta = unique(gene_tr_id_fasta)
 # DTU pipeline
 
 Load *BANDITS*
-```{r message=FALSE}
+```{r load_BANDITS, message=FALSE}
 library(BANDITS)
 ```
 
 ## Preliminary information
 Specify the directory of the data (internal in the package).
-```{r}
+```{r specify_data-dir}
 data_dir = system.file("extdata", package = "BANDITS")
 ```
 
@@ -132,20 +138,20 @@ The file "alignment and gene-transcript matching.txt" shows how to create such a
 
 Load the precomputed gene-transcript matching.
 `gene_tr_id` is a data.frame (but a matrix is also accepted) containing the transcripts ids on the second column and the corresponding gene ids on the first column.
-```{r}
+```{r load_gene-transcript}
 data("gene_tr_id", package = "BANDITS")
 head(gene_tr_id)
 ```
 
 Specify the directory of the transcript level estimated counts.
-```{r}
+```{r specify_quantification_path}
 sample_names = paste0("sample", seq_len(4))
 quant_files = file.path(data_dir, "STAR-salmon", sample_names, "quant.sf")
 file.exists(quant_files)
 ```
 
 Load the transcript level estimated counts via tximport.
-```{r}
+```{r load_counts}
 library(tximport)
 txi = tximport(files = quant_files, type = "salmon", txOut = TRUE)
 counts = txi$counts
@@ -153,21 +159,21 @@ head(counts)
 ```
 
 We define the design of the study: in our case we have 2 groups, that we call "A" and "B" of 2 samples each.
-```{r}
+```{r specify_design}
 samples_design = data.frame(sample_id = sample_names,
                             group = c("A", "A", "B", "B"))
 samples_design
 ```
 
 The groups are defined in:
-```{r}
+```{r groups}
 levels(samples_design$group)
 ```
 
 Here we consider a two-group comparison, however *BANDITS* also allows to compare more than 2 groups.
 
 Before loading the data, we also compute, via `eff_len_compute`, the median effective length of each transcript (the median is computed with respect to the samples).
-```{r}
+```{r effective_transcript_length}
 eff_len = eff_len_compute(x_eff_len = txi$length)
 head(eff_len)
 ```
@@ -182,7 +188,7 @@ Compute the transcripts to keep, by filtering lowly abundant transcripts.
 Here `min_transcript_proportion = 0.01` will remove transctipts with estimated mean relative abundance below 0.01.
 We further impose constraints on the total abundance: `min_transcript_counts = 10` indicates that each transcript must have at least 10 estimated counts (adding counts from all samples), and `min_gene_counts = 20` specifies that each gene should have at least 20 estimated counts (adding counts from all samples).
 While running, `filter_transcripts` prints on screen the percentage of transcripts kept after filtering.
-```{r}
+```{r filter_lowly_abundant_transcripts}
 transcripts_to_keep = filter_transcripts(gene_to_transcript = gene_tr_id,
                                          transcript_counts = counts, 
                                          min_transcript_proportion = 0.01,
@@ -196,14 +202,14 @@ Below we illustrate how to load the equivalence classes computed with `salmon` o
 
 ### salmon input
 We specify the path to the equivalence classes computed by `salmon` in `equiv_classes_files`.
-```{r}
+```{r specify_salmon_EC_path}
 equiv_classes_files = file.path(data_dir, "STAR-salmon", sample_names, 
                                 "aux_info", "eq_classes.txt")
 file.exists(equiv_classes_files)
 ```
 
 Warning: the sample names in `equiv_classes_files` must have the same order as those in the design object, containted in `samples_design`.
-```{r}
+```{r check_same_order_salmon}
 equiv_classes_files
 samples_design$sample_id
 ```
@@ -214,7 +220,7 @@ When filtering transripts, we suggest to parallelize computations and use one co
 Since at least 2 transcripts are necessary to study differential splicing, genes with a single transcript are not analyzed.
 
 In our example data, reads were aligned to the genome with *STAR*, and *salmon* was then used to compute the equivalence classes (and quantify transcript abundance) on the aligned reads; therefore we set `salmon_or_kallisto = "salmon"`.
-```{r}
+```{r create_data_salmon}
 input_data = create_data(salmon_or_kallisto = "salmon",
                          gene_to_transcript = gene_tr_id,
                          salmon_path_to_eq_classes = equiv_classes_files,
@@ -226,7 +232,7 @@ input_data = create_data(salmon_or_kallisto = "salmon",
 If transcripts pre-filtering is not wanted, do not specify `transcripts_to_keep` parameter.
 
 After loading the data, with `filter_genes(data, min_counts_per_gene = 20)`, we remove genes with less than 20 counts overall (i.e.,  considering all equivalence classes across all samples).
-```{r}
+```{r filter_genes_salmon}
 input_data = filter_genes(input_data, min_counts_per_gene = 20)
 ```
 
@@ -235,20 +241,20 @@ input_data = filter_genes(input_data, min_counts_per_gene = 20)
 When reads have been aligned with `kallisto`, we proceed in a very similar way as above.
 
 We specify the path to the equivalence classes (`kallisto_equiv_classes`) and respective counts (`kallisto_equiv_counts`) computed by `kallisto`.
-```{r}
+```{r specify_kallisto_EC_path}
 kallisto_equiv_classes = file.path(data_dir, "kallisto", sample_names, "pseudoalignments.ec")
 kallisto_equiv_counts  = file.path(data_dir, "kallisto", sample_names, "pseudoalignments.tsv")
 file.exists(kallisto_equiv_classes); file.exists(kallisto_equiv_counts)
 ```
 
 Warning: as above, the sample names in `kallisto_equiv_classes` and `kallisto_equiv_classes` must have the same order as those in the design object, containted in `samples_design`.
-```{r}
+```{r check_same_order_kallisto}
 kallisto_equiv_classes; kallisto_equiv_counts
 samples_design$sample_id
 ```
 
 As above, we import the equivalence classes and respective counts, and create a `BANDITS_data` object via `create_data`.
-```{r}
+```{r create_data_kallisto}
 input_data_2 = create_data(salmon_or_kallisto = "kallisto",
                            gene_to_transcript = gene_tr_id,
                            kallisto_equiv_classes = kallisto_equiv_classes,
@@ -262,7 +268,7 @@ input_data_2
 If transcripts pre-filtering is not wanted, do not specify `transcripts_to_keep` parameter.
 
 After loading the data, with `filter_genes(data, min_counts_per_gene = 20)`, we remove genes with less than 20 counts overall (i.e.,  considering all equivalence classes across all samples).
-```{r}
+```{r filter_genes_kallisto}
 input_data_2 = filter_genes(input_data_2, min_counts_per_gene = 20)
 ```
 
@@ -275,7 +281,7 @@ Note that this is an optional, yet highly recommended, step.
 The `prior_precision` function builds on top of *DRIMSeq*'s [@DRIMSeq] `DRIMSeq::dmPrecision` function which provides genewise estimates of the precision parameter.
 Use the same filtering criteria as in `create_data`, by choosing the same argument for `transcripts_to_keep`.
 If transcript pre-filtering is not performed, leave `transcripts_to_keep` unspecified.
-```{r}
+```{r prior_precision}
 set.seed(61217)
 precision = prior_precision(gene_to_transcript = gene_tr_id,
                             transcript_counts = counts, n_cores = 2,
@@ -283,13 +289,13 @@ precision = prior_precision(gene_to_transcript = gene_tr_id,
 ```
 
 The first element of the result contains the mean and standard deviation of the log-precision estimates.
-```{r}
+```{r prior}
 precision$prior
 ```
 
 Plot the histogram of the genewise log-precision estimates.
 The black solid line represents the normally distributed prior distribution for the log-precision parameter.
-```{r}
+```{r plot_precision}
 plot_precision(precision)
 ```
 
@@ -315,7 +321,7 @@ The method can technically be run with a single observation per group, however 2
 
 We run the DTU method.
 `group_col_name` indicates the name of the column of `samples_design` containing the group id of each sample (by default `group_col_name = "group"`).
-```{r}
+```{r test_DTU}
 set.seed(61217)
 results = test_DTU(BANDITS_data = input_data,
                    precision = precision$prior,
@@ -329,40 +335,40 @@ The output of `test_DTU` is a `BANDITS_test` object; results are stored in 3 `da
 All results are sorted, by default, according to the significance of the gene level test.
 
 To read a full description of the output from `test_DTU`, see `help(BANDITS_test)`.
-```{r}
+```{r visualize_results}
 results
 ```
 
 Functions `top_genes`, `top_transcripts` and `convergence` can be used to access gene level results, transcript level results and convergence output, respectively.
 
 Visualize the most significant Genes, sorted by gene level significance.
-```{r}
+```{r top_genes}
 head(top_genes(results))
 ```
 
 Alternatively, gene-level results can also be sorted according to "DTU_measure", which is a measure of the strength of the change between average relative abundances of the two groups.
-```{r}
+```{r top_genes_by_DTU_measure}
 head(top_genes(results, sort_by = "DTU_measure"))
 ```
 
 Visualize the most significant transcripts, sorted by transcript level significance.
-```{r}
+```{r top_transcripts}
 head(top_transcripts(results, sort_by = "transcript"))
 ```
 
 Visualize the convergence output for the most significant genes, sorted by gene level significance.
-```{r}
+```{r convergence}
 head(convergence(results))
 ```
 
 We can further use the `gene` function to gather all output for a specific gene: gene level, transcript level and convergence results.
-```{r}
+```{r top_gene}
 top_gene = top_genes(results, n = 1)
 gene(results, top_gene$Gene_id)
 ```
 
 Similarly we can use the `transcript` function to gather all output for a specific transcript.
-```{r}
+```{r top_transcript}
 top_transcript = top_transcripts(results, n = 1)
 transcript(results, top_transcript$Transcript_id)
 ```
@@ -370,7 +376,7 @@ transcript(results, top_transcript$Transcript_id)
 Finally, we can plot the estimated average transcript relative expression in the two groups for a specific gene via `plot_proportions`.
 When `CI = TRUE` (default), a solid black line is plotted on top of the histograms, indicating the profile Wald type confidence interval (CI) of each transcript relative expression; the level of the CI can be set via `CI_level` parameter (0.95 by default).
 Note that the width of the CIs is a consequence of the limited ammount of available data (i.e., few counts); the boundaries are usually much smaller in real datasets.
-```{r}
+```{r plot_proportions}
 plot_proportions(results, top_gene$Gene_id, CI = TRUE, CI_level = 0.95)
 ```
 
@@ -388,12 +394,60 @@ This measure is based on the observation that often differential splicing leads 
 We also propose a score, `DTU_measure`, again only defined for two-group comparisons, which is intended to measure the intensity of the DTU change, similarly to fold changes in differential expression analyses.
 Consider a gene with K transcripts with relative abundance $\pi_1^{(A)}, \ldots,\pi_K^{(A)}$, for group $A$, and $\pi_1^{(B)}, \ldots,\pi_K^{(B)}$, for group $B$.
 `DTU_measure` is defined as the summation of the absolute difference between the two most expressed transcripts: $\sum_{k \in \tilde{K} } \left| \pi_k^{(A)} - \pi_k^{(B)} \right|$, where $\tilde{K}$ indicates the set of two most expressed transcripts across both groups (i.e., adding $\pi_k^{(A)}$ and $\pi_k^{(B)}$).
+Note that this measure ranges between 0, when proportions are identical between groups, and 2, when an isoform is always expressed in group A and a different transcript is always chosen in group B.
+
+Finally, `Mean log-prec group_name` and `SD log-prec group_name` indicate the posterior mean and standard deviation of $log(\delta)$, i.e., the logarithm of the Dirichlet precision parameter in each group.
+The precision parameter models the degree of over-dispersion between samples: the higher the precision parameter (or its logarithm), the lower the sample-to-sample variability.
 
 #### Transcript level results {-}
 In transcript level results, `Max_Gene_Tr.p.val` and `Max_Gene_Tr.Adj.p.val` are two conservative transcript level measures which account for both, the gene and transcript level p.values: they are the maximum between the gene and transcript level p.values and adjusted p.values, respectively.
 With these measures, a transcript can only be detected as significant if the corresponding gene is also significant.
 
-Finally, `Mean group_name` and `SD group_name` indicate the posterior mean and standard deviation of each transcript relative abundance.
+Finally, `Mean group_name` and `SD group_name` indicate the posterior mean and standard deviation of each transcript mean relative abundance.
+
+# Inference with 1 group only
+If all samples belong to the same experimental condition, differential testing between conditions cannot be performed.
+Nonetheless, BANDITS can still be used to infer group-level parameters (i.e., mean relative abundance of transcripts and dispersion).
+
+The pipeline is identical to the case exposed above: the only difference concerns the design matrix, which now includes a single group for all samples.
+```{r specify_design_1_group}
+samples_design_1_group = data.frame(sample_id = sample_names,
+                            group = c("A", "A", "A", "A"))
+samples_design_1_group
+levels(samples_design_1_group$group)
+```
+
+Inference is again performed via `test_DTU` function (even though the differential testing itself is not implemented).
+```{r test_DTU_1_group}
+set.seed(61217)
+results_1_group = test_DTU(BANDITS_data = input_data,
+                   precision = precision$prior,
+                   samples_design = samples_design_1_group,
+                   group_col_name = "group",
+                   R = 10^4, burn_in = 2*10^3, n_cores = 2,
+                   gene_to_transcript = gene_tr_id)
+results_1_group
+```
+
+Gene and transcript-level results can be visualized as above; results are sorted by gene name.
+Note that now all columns relative to DTU testing are missing (p.values, adjusted p.values, DTU_measure, etc...).
+```{r top_genes_1_group}
+head(top_genes(results_1_group))
+
+head(top_transcripts(results_1_group))
+```
+
+We can focus on the results of a specific gene or transcript.
+```{r top_gene_1_group}
+gene(results_1_group, top_genes(results_1_group)$Gene_id[1])
+
+transcript(results_1_group, top_transcripts(results_1_group)$Transcript_id[1])
+```
+
+Finally, we can plots the estimated mean transcript relative expression of a specific gene.
+```{r plot_proportions_1_group}
+plot_proportions(results_1_group, top_genes(results_1_group)$Gene_id[1], CI = TRUE, CI_level = 0.95)
+```
 
 # Session info
 ```{r sessionInfo}

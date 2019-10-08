@@ -16,7 +16,11 @@ wald_DTU_test_MultiGroup = function(f, l, exon_id, N, R, burn_in, mean_log_preci
   pvals_res = pval_compute_MultiGroup( mcmc = chain[[1]], K = K, N_groups = N_groups)
   
   if(is.na(pvals_res[[1]][1]) == FALSE){
-    if( pvals_res[[1]][1] > theshold_pval ){ # if p.val[55] > 0.1 I return the p.vals
+    if( pvals_res[[1]][1] > theshold_pval ){ # if p.val > 0.1 I return the p.vals
+      mean_prec = apply(chain[[3]], 2, mean)
+      sd_prec   = apply(chain[[3]], 2, sd)
+      pvals_res[[1]] = c(pvals_res[[1]], mean_prec, sd_prec)
+      
       return( list(p.vals = pvals_res, convergence = chain[[2]]) ) # return the convergence result too (to check they are all converged with reasonable burn-in).
     }
   }
@@ -26,6 +30,10 @@ wald_DTU_test_MultiGroup = function(f, l, exon_id, N, R, burn_in, mean_log_preci
                                   burn_in = burn_in, mean_log_precision = mean_log_precision, sd_log_precision = sd_log_precision)
   
   if(chain_2[[2]][1] == 0){ # IF the second chain didn't converge (3 times), return the result from the first one:
+    mean_prec = apply(chain[[3]], 2, mean)
+    sd_prec   = apply(chain[[3]], 2, sd)
+    pvals_res[[1]] = c(pvals_res[[1]], mean_prec, sd_prec)
+    
     return( list(p.vals = pvals_res, convergence = chain[[2]]) ) # return the convergence result too (to check they are all converged with reasonable burn-in).
   }
   
@@ -35,6 +43,12 @@ wald_DTU_test_MultiGroup = function(f, l, exon_id, N, R, burn_in, mean_log_preci
   
   # I merge the two chains computed independently and return the pvals computed on the two chains merged together.
   pvals_res = pval_compute_MultiGroup( mcmc = chain[[1]], K = K, N_groups = N_groups)
+  
+  chain[[3]] = rbind(chain[[3]], chain_2[[3]])
+
+  mean_prec = apply(chain[[3]], 2, mean)
+  sd_prec   = apply(chain[[3]], 2, sd)
+  pvals_res[[1]] = c(pvals_res[[1]], mean_prec, sd_prec)
   
   return( list(p.vals = pvals_res, convergence = chain[[2]]) ) # return the convergence result too (to check they are all converged with reasonable burn-in).
 }
@@ -105,11 +119,13 @@ MCMC_chain_MultiGroup = function(f, l, exon_id, N, N_groups, R, K, burn_in, mean
       for(n in seq_len(N_groups) ){
         res[[1]][[n]] = res[[1]][[n]][seq.,][-{seq_len(convergence[2]-1)},]
       }
+      res[[3]] = res[[3]][seq.,][-{seq_len(convergence[2]-1)},]
     }else{ # if convergence[2] == 1, seq. has altready been defined above.
       if(R > 10^4){ # thin if R > 10^4
         for(n in seq_len(N_groups) ){
           res[[1]][[n]] = res[[1]][[n]][seq.,]
         }
+        res[[3]] = res[[3]][seq.,]
       }
     }
   }else{ # IF not converged, RUN a second chain (once only):
@@ -123,7 +139,7 @@ MCMC_chain_MultiGroup = function(f, l, exon_id, N, N_groups, R, K, burn_in, mean
   # thin results to return 10^4 iterations.
   # thin if R > 10^4 (to return 10^4 values).
   
-  list( res[[1]], convergence )  # I return the list of MCMC chains, excluding the burn-in, and the convergence output
+  list( res[[1]], convergence, res[[3]] )  # I return the list of MCMC chains, excluding the burn-in, and the convergence output
 }
 
 pval_compute_MultiGroup = function(mcmc, K, N_groups){

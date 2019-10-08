@@ -4,13 +4,16 @@ wald_DTU_test_FULL = function(f, l, exon_id, N_1, N_2, R, burn_in, mean_log_prec
                           burn_in = burn_in, mean_log_precision = mean_log_precision, sd_log_precision = sd_log_precision)
   
   if(chain[[2]][1] == 0){ # IF the first chain didn't converge (3 times), return NULL result:
-    return( list(p.vals = NA, convergence = chain[[2]]) )
+    return( list(p.vals = NA, convergence = chain[[2]] ) )
   }
   
   pvals_res = compute_pval_FULL( A = chain[[1]][[1]], B = chain[[1]][[2]], K = K, N = N_1 + N_2)
   
   if(is.na(pvals_res[[1]][1]) == FALSE){ # If NA, I output a warning and redo the MCMC
-    if( pvals_res[[1]][1] > theshold_pval ){ # if p.val[55] > 0.1 I return the p.vals
+    if( pvals_res[[1]][1] > theshold_pval ){ # if p.val > 0.1 I return the p.vals
+      mean_prec = vapply(chain[[4]], mean, FUN.VALUE = numeric(1))
+      sd_prec = vapply(chain[[4]], sd, FUN.VALUE = numeric(1))
+      pvals_res[[1]] = c(pvals_res[[1]], mean_prec, sd_prec)
       return( list(p.vals = pvals_res, convergence = chain[[2]]) ) # return the convergence result too (to check they are all converged with reasonable burn-in).
     }
   }else{
@@ -22,11 +25,22 @@ wald_DTU_test_FULL = function(f, l, exon_id, N_1, N_2, R, burn_in, mean_log_prec
   
   # if chain_2 converged, I add it to the first one, otherwise I don't:
   if(chain_2[[2]][1] == 0){ # IF the second chain didn't converge (3 times), return the result (already computed) from the first one:
+    mean_prec = vapply(chain[[4]], mean, FUN.VALUE = numeric(1))
+    sd_prec = vapply(chain[[4]], sd, FUN.VALUE = numeric(1))
+    pvals_res[[1]] = c(pvals_res[[1]], mean_prec, sd_prec)
     return( list(p.vals = pvals_res, convergence = chain[[2]]) ) # return the convergence result too (to check they are all converged with reasonable burn-in).
   }
   
   # I merge the two chains computed independently and return the pvals computed on the two chains merged together.
   pvals_res = compute_pval_FULL( A = rbind( chain[[1]][[1]], chain_2[[1]][[1]]), B = rbind( chain[[1]][[2]], chain_2[[1]][[2]]), K = K, N = N_1 + N_2)
+  
+  chain[[4]][[1]] = c(chain[[4]][[1]], chain_2[[4]][[1]])
+  chain[[4]][[2]] = c(chain[[4]][[2]], chain_2[[4]][[2]])
+  
+  mean_prec = vapply(chain[[4]], mean, FUN.VALUE = numeric(1))
+  sd_prec = vapply(chain[[4]], sd, FUN.VALUE = numeric(1))
+  pvals_res[[1]] = c(pvals_res[[1]], mean_prec, sd_prec)
+  
   list(p.vals = pvals_res, convergence = chain[[2]]) # return the convergence result too (to check they are all converged with reasonable burn-in).
 }
 
@@ -50,10 +64,14 @@ MCMC_chain_FULL = function(f, l, exon_id, N_1, N_2, R, K, burn_in, mean_log_prec
     if(convergence[2] > 1){ # remove burn-in estimated by heidel.diag (which is, AT MOST, half of the chain):
       res[[1]] = res[[1]][seq.,][-seq_len(convergence[2]-1),]
       res[[2]] = res[[2]][seq.,][-seq_len(convergence[2]-1),]
+      res[[4]] = res[[4]][seq.][-seq_len(convergence[2]-1)]
+      res[[5]] = res[[5]][seq.][-seq_len(convergence[2]-1)]
     }else{ # if convergence[2] == 1, seq. has altready been defined above.
       if(R > 10^4){ # thin if R > 10^4
         res[[1]] = res[[1]][seq.,]
         res[[2]] = res[[2]][seq.,]
+        res[[4]] = res[[4]][seq.]
+        res[[5]] = res[[5]][seq.]
       }
     }
   }else{ # IF not converged, RUN a second chain (once only):
@@ -68,7 +86,7 @@ MCMC_chain_FULL = function(f, l, exon_id, N_1, N_2, R, K, burn_in, mean_log_prec
   # thin if R > 10^4 (to return 10^4 values).
   
   # save whether it's the first run or not (i.e. whether the convergence test failed).
-  list( res[seq_len(2)], convergence, FIRST_chain )  # I return the list of MCMC chains, excluding the burn-in
+  list( res[seq_len(2)], convergence, FIRST_chain, res[c(4,5)] )  # I return the list of MCMC chains, excluding the burn-in
 }
 
 

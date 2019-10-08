@@ -56,6 +56,12 @@ test_DTU_multi_group = function(BANDITS_data, mean_log_precision, sd_log_precisi
                                                                          R = 2*R, burn_in = 2*burn_in, N = N_mg,
                                                                          theshold_pval = theshold_pval)
                                  if( length(res[[1]]) > 1 ){
+                                   sel_tmp = c(1, 1 + which(sel_groups), 1 + length(sel_groups) + which(sel_groups))
+                                   res_tmp = matrix(NaN, nrow = nrow(res[[1]][[1]]), ncol = 1 + 2 * length(sel_groups)) # rows = transcripts; cols = groups
+                                   res_tmp[ , sel_tmp] = res[[1]][[1]]
+                                   rownames(res_tmp) = rownames(res[[1]][[1]])
+                                   res[[1]][[1]] = res_tmp
+                                   
                                    if(!is.null(res[[1]][[3]])){ # if trans result is not null (i.e., if the gene was analyzed):
                                      # Store the transcripts modes in a matrix, leave empty groups which were not analyzed:
                                      res[[1]][[3]] = do.call(rbind, res[[1]][[3]]) # gather together results from different genes.
@@ -83,9 +89,15 @@ test_DTU_multi_group = function(BANDITS_data, mean_log_precision, sd_log_precisi
                                                                   R = R, burn_in = burn_in, N = N_mg,
                                                                   theshold_pval = theshold_pval)
                                    if(length(res[[1]]) > 1){
-                                     names(res[[1]][[2]]) = transcripts(BANDITS_data)[[p]]
-                                     names(res[[1]][[1]]) = genes(BANDITS_data)[[p]]
+                                     # sort p.value (pos 1) and post mean and sd of log-precision:
+                                     sel_tmp = c(1, 1 + which(sel_groups), 1 + length(sel_groups) + which(sel_groups))
+                                     res_tmp = matrix(NaN, nrow = 1, ncol = 1 + 2 * length(sel_groups)) # rows = transcripts; cols = groups
+                                     res_tmp[ , sel_tmp] = res[[1]][[1]]
+                                     res[[1]][[1]] = res_tmp
+                                     rownames(res[[1]][[1]]) = genes(BANDITS_data)[[p]]
                                      
+                                     names(res[[1]][[2]]) = transcripts(BANDITS_data)[[p]]
+
                                      # Store the transcripts modes in a matrix, leave empty groups which were not analyzed:
                                      trans_mode = matrix(NaN, nrow = length(transcripts(BANDITS_data)[[p]]), ncol = length(sel_groups)) # rows = transcripts; cols = groups
                                      trans_mode[ , sel_groups] = res[[1]][[3]]
@@ -111,7 +123,14 @@ test_DTU_multi_group = function(BANDITS_data, mean_log_precision, sd_log_precisi
                                                                    R = 2*R, burn_in = 2*burn_in, N_1 = N_mg[1], N_2 = N_mg[2],
                                                                    theshold_pval = theshold_pval)
                                  if( length(res[[1]]) > 1 ){
-                                   res[[1]][[1]] = res[[1]][[1]][,1] # only keep the first value (the gene p.val)
+                                   res[[1]][[1]] = res[[1]][[1]][,c(1, seq.int(4,7, by = 1))]
+                                   # only keep the first value (the gene p.val), and 4:5 (mean log-prec) and 6:7 (sd log-prec)
+                                   
+                                   sel_tmp = c(1, 1 + which(sel_groups), 1 + length(sel_groups) + which(sel_groups))
+                                   res_tmp = matrix(NaN, nrow = nrow(res[[1]][[1]]), ncol = 1 + 2 * length(sel_groups)) # rows = transcripts; cols = groups
+                                   res_tmp[ , sel_tmp] = res[[1]][[1]]
+                                   rownames(res_tmp) = rownames(res[[1]][[1]])
+                                   res[[1]][[1]] = res_tmp
                                    
                                    if(!is.null(res[[1]][[3]])){ # if trans result is not null (i.e., if the gene was analyzed):
                                      # Store the transcripts modes in a matrix, leave empty groups which were not analyzed:
@@ -139,8 +158,16 @@ test_DTU_multi_group = function(BANDITS_data, mean_log_precision, sd_log_precisi
                                                              R = R, burn_in = burn_in, N_1 = N_mg[1], N_2 = N_mg[2],
                                                              theshold_pval = theshold_pval)
                                    if(length(res[[1]]) > 1){
-                                     res[[1]][[1]] = res[[1]][[1]][1] # only keep the first value (the gene p.val)
-                                     names(res[[1]][[1]]) = genes(BANDITS_data)[[p]]
+                                     res[[1]][[1]] = res[[1]][[1]][c(1, seq.int(4,7, by = 1))]
+                                     # only keep the first value (the gene p.val), and 4:5 (mean log-prec) and 6:7 (sd log-prec)
+                                     
+                                     # sort p.value (pos 1) and post mean and sd of log-precision:
+                                     sel_tmp = c(1, 1 + which(sel_groups), 1 + length(sel_groups) + which(sel_groups))
+                                     res_tmp = matrix(NaN, nrow = 1, ncol = 1 + 2 * length(sel_groups)) # rows = transcripts; cols = groups
+                                     res_tmp[ , sel_tmp] = res[[1]][[1]]
+                                     res[[1]][[1]] = res_tmp
+                                     rownames(res[[1]][[1]]) = genes(BANDITS_data)[[p]]
+                                     
                                      names(res[[1]][[2]]) = transcripts(BANDITS_data)[[p]]
                                      
                                      # Store the transcripts modes in a matrix, leave empty groups which were not analyzed:
@@ -171,24 +198,33 @@ test_DTU_multi_group = function(BANDITS_data, mean_log_precision, sd_log_precisi
   # Gather together GENE level results:
   #########################################################################################################
   p_values = lapply(p_values_ALL, function(x) x[[1]][[1]])
-  p_values = do.call(c, p_values)
+  p_values = do.call(rbind, p_values)
   
-  gene_names = names(p_values)
+  gene_names = rownames(p_values)
   
-  suppressWarnings({ p_values = as.numeric(p_values) })
-  names(p_values) = gene_names
+  suppressWarnings({ p_values = apply(p_values, 2, as.numeric) })
+  rownames(p_values) = gene_names
   
-  SEL_ALL  = !is.na(p_values)  # remove NA's (genes not converged).
-  p_values = p_values[SEL_ALL]
+  SEL_ALL  = !is.na(p_values[,1])  # remove NA's (genes not converged).
+  p_values = p_values[SEL_ALL,]
   
-  SEL_ALL  = p_values != -1  # remove -1's (genes not analyzed).
-  p_values = p_values[SEL_ALL]
+  SEL_ALL  = p_values[,1] != -1  # remove -1's (genes not analyzed).
+  p_values = p_values[SEL_ALL,]
   
   # sort p.values according to their significance.
-  p_values = p_values[ order(p_values) ]
+  p_values = p_values[ order(p_values[,1]), ]
   
   # COMPUTE ADJUSTED P.VALS:
-  adj.p_values    = p.adjust(p_values, method = "BH") # gene-test
+  adj.p_values = p.adjust(p_values[,1], method = "BH") # gene-test
+  
+  gene_DF = data.frame(Gene_id = rownames(p_values), 
+                       p.values = p_values[,1], 
+                       adj.p.values = adj.p_values,
+                       p_values[,-1],
+                       row.names = NULL)
+  
+  names(gene_DF)[ seq.int(4, 3 + length(group_levels)) ] = paste("Mean log-prec", group_levels)
+  names(gene_DF)[ seq.int(4 + length(group_levels), 3 + 2*length(group_levels)) ] = paste("SD log-prec", group_levels)
   
   #########################################################################################################
   # Gather together TRANSCRIPT level results:
@@ -255,10 +291,13 @@ test_DTU_multi_group = function(BANDITS_data, mean_log_precision, sd_log_precisi
   
   # re-name the group names according to the groups names:
   names(tr_DF)[ seq(7, 6 + length(group_levels)) ] = paste("Mean", group_levels)
-  names(tr_DF)[ seq(7 + length(group_levels), 6 + 2*length(group_levels)) ] = paste("sd", group_levels)
+  names(tr_DF)[ seq(7 + length(group_levels), 6 + 2*length(group_levels)) ] = paste("SD", group_levels)
   
   # sort p.values according to their GENE significance:
   tr_DF = tr_DF[ order(p_values[match(tr_DF$Gene_id, rownames(p_values))], tr_DF$p.values) ,]
+  
+  # set rownames to 1, 2, ..., nrow(tr_DF)
+  rownames(tr_DF) = seq_len(nrow(tr_DF))
   
   #########################################################################################################
   # Return Convergence results:
@@ -287,9 +326,7 @@ test_DTU_multi_group = function(BANDITS_data, mean_log_precision, sd_log_precisi
   message("Returning results")
   
   return(new("BANDITS_test",
-             Gene_results = data.frame(Gene_id = names(p_values), 
-                                       p.values = p_values, adj.p.values = adj.p_values,
-                                       row.names = NULL), 
+             Gene_results = gene_DF, 
              Transcript_results =  tr_DF,
              Convergence = data.frame(Gene_id = rownames(convergence),
                                       converged = ifelse(convergence[,1], TRUE, FALSE), # did the gene converge or NOT ?

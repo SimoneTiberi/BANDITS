@@ -97,6 +97,10 @@ p.values_inverted = p.values, if the dominant transcript varies between conditio
 and p.values_inverted = sqrt( p.values ) if both conditions have the same dominant transcript;
 \item adj.p.values_inverted (only available for 2-group comparisons) is the Benjamini-Hochberg adjusted p.values_inverted, via \code{\link{p.adjust}};
 \item DTU_measure (only available for 2-group comparisons) represents a measure of the intensity of changes between conditions.
+This measure ranges between 0, when proportions are identical between groups, and 2, when an isoform is always expressed in group A and a different transcript is always chosen in group B;
+\item Mean log-prec "group_name" indicates the posterior mean of the logarithm of the Dirichlet precision parameter in group "group_name".
+The precision parameter models the degree of over-dispersion between samples: the higher the precision parameter (or its logarithm), the lower the sample-to-sample variability.
+\item SD log-prec "group_name" indicates the standard deviation of the logarithm of the Dirichlet precision parameter in group "group_name".
 }}
 
 \item{\code{Transcript_results}}{a \code{data.frame} containing the transcript-level results of the DTU test, structured in the following columns:
@@ -109,7 +113,7 @@ and p.values_inverted = sqrt( p.values ) if both conditions have the same domina
 \item Max_Gene_Tr.Adj.p.val is the Benjamini-Hochberg adjusted Max_Gene_Tr.p.val (via \code{\link{p.adjust}});
 \item Mean "group_name" indicates the posterior mean of the average relative abundance of the transcript in group "group_name"
 (an \code{NaN} value indicates that no data was available for a group to estimate parameters);
-\item sd "group_name" indicates the standard deviation of the average relative abundance of the transcript in group "group_name"
+\item SD "group_name" indicates the standard deviation of the average relative abundance of the transcript in group "group_name"
 (an \code{NaN} value indicates that no data was available for a group to estimate parameters);
 this column indicates the variability in the mean estimate and is used to plot a 
 Wald type confidence interval for the mean relative abundance via \code{\link{plot_proportions}}.

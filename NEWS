@@ -1,2 +1,8 @@
+Changes in version 1.2.0:
++ Added mean and standard deviation estimates of the precision parameter
++ Allow estimation of parameters (without testing) when 1 group only is provided
++ Added 1 section of the vignette for inference with 1 group only
++ Added reference to BANDITS manuscript
+
 Changes in version 1.0.0:
 + Submitted to Bioconductor

@@ -129,15 +129,9 @@ test_DTU = function(BANDITS_data, precision = NULL, R = 10^4, burn_in = 2*10^3,
   }
   
   groups = samples_design[, sel_col ]
-  group_levels = levels(groups)
+  group_levels = levels(factor(groups))
   N_groups = length(group_levels)
   N = vapply(group_levels,  function(g) sum(groups == g), FUN.VALUE = integer(1)) 
-  # sapply( group_levels, function(g) sum(groups == g) )
-  
-  if( sum( N > 0.5 ) < 1.5){ # check that >=2 groups have >=1 samples
-    message("At least two distinct groups must be present in 'samples_design$group'")
-    return(NULL)
-  }
   
   # check if data are already ordered (first A, then B, etc...)
   # if not, ORDER data (equiv classes counts) to respect the ordering in "groups"
@@ -162,6 +156,26 @@ test_DTU = function(BANDITS_data, precision = NULL, R = 10^4, burn_in = 2*10^3,
   final_order = c(length(order_Unique) + order_Together, order_Unique)
   
   #########################################################################################################
+  # Infer model parameters from 1 group only:
+  #########################################################################################################
+  if(length(group_levels) == 1){
+    message("One group only is present in 'samples_design$group': 
+  BANDITS will infer model parameters, but will not test for DTU between groups.")
+    return( infer_one_group(BANDITS_data = BANDITS_data,
+                            mean_log_precision = mean_log_precision, sd_log_precision = sd_log_precision,
+                            R = R, burn_in = burn_in, n_cores = n_cores,
+                            final_order = final_order, ord_samples = ord_samples,
+                            group_levels = group_levels, samples_design = samples_design,
+                            gene_to_transcript = gene_to_transcript) )
+  }
+  
+  if( sum( N > 0.5 ) < 1.5){ # check that >=2 groups have >=1 samples
+    message("At least two distinct groups must be present in 'samples_design$group' to perform DTU")
+    return(NULL)
+  }
+  
+  
+  #########################################################################################################
   # Multi-group testing if there are 3 or more groups:
   #########################################################################################################
   if(N_groups > 2.5){ # if there are 3 or more groups, use the Multi-group test:
@@ -181,7 +195,7 @@ test_DTU = function(BANDITS_data, precision = NULL, R = 10^4, burn_in = 2*10^3,
     cl <- makeCluster(n_cores);
   })
   registerDoParallel(cl, n_cores);
-
+  
   message("Starting the MCMC")
   
   p_values_ALL = foreach(p = final_order,
@@ -243,10 +257,10 @@ test_DTU = function(BANDITS_data, precision = NULL, R = 10^4, burn_in = 2*10^3,
   p_values = do.call(rbind, p_values)
   
   gene_names = rownames(p_values)
-
+  
   suppressWarnings({ p_values = apply(p_values, 2, as.numeric) })
   rownames(p_values) = gene_names
-
+  
   SEL_ALL  = !is.na(p_values[,1])  # remove NA's (genes not converged).
   p_values = p_values[SEL_ALL,]
   
@@ -257,7 +271,19 @@ test_DTU = function(BANDITS_data, precision = NULL, R = 10^4, burn_in = 2*10^3,
   p_values = p_values[ order(p_values[,1]), ]
   
   # COMPUTE ADJUSTED P.VALS:
-  adj.p_values    = p.adjust(p_values[,1], method = "BH") # gene-test
+  adj.p_values = p.adjust(p_values[,1], method = "BH") # gene-test
+  
+  gene_DF = data.frame(Gene_id = rownames(p_values), 
+                       p.values = p_values[,1], 
+                       adj.p.values = adj.p_values,
+                       p.values_inverted = ifelse(p_values[,2], p_values[,1], sqrt(p_values[,1])),    # if NOT inverted, take sqrt(p.val)
+                       adj.p.values_inverted = ifelse(p_values[,2], adj.p_values, sqrt(adj.p_values)), # if NOT inverted, take sqrt(adj.p.val)
+                       DTU_measure = p_values[,3], # sum of top two differences of posterior modes between transcripts.
+                       p_values[,seq.int(4,7, by = 1)],
+                       row.names = NULL)
+  
+  names(gene_DF)[ c(7,8) ] = paste("Mean log-prec", group_levels)
+  names(gene_DF)[ c(9,10) ] = paste("SD log-prec", group_levels)
   
   #########################################################################################################
   # Gather together TRANSCRIPT level results:
@@ -309,7 +335,7 @@ test_DTU = function(BANDITS_data, precision = NULL, R = 10^4, burn_in = 2*10^3,
   p_values_tr = p_values_tr[cond,] # filter null results
   
   cond = p_values_tr[,1] != -1
-  p_values_tr = p_values_tr[cond,] # filter null results
+  p_values_tr = p_values_tr[cond,] # filter -1 results
   
   # COMPUTE ADJUSTED P.VALS:
   adj.p_values_tr = p.adjust(p_values_tr[,1],  method = "BH") # transcript-test
@@ -326,15 +352,18 @@ test_DTU = function(BANDITS_data, precision = NULL, R = 10^4, burn_in = 2*10^3,
   tr_DF = data.frame(Gene_id = genes_in_tr, Transcript_id = rownames(p_values_tr), 
                      p.values = p_values_tr[,1], adj.p.values = adj.p_values_tr,
                      Max_Gene_Tr.p.val = max_gene_tr_p.val, Max_Gene_Tr.Adj.p.val = max_gene_tr_adj.p.val,
-                     p_values_tr[,2:5], 
+                     p_values_tr[,seq.int(2, 5, by = 1)], 
                      row.names = NULL)
   
   # re-name the group names according to the groups names:
-  names(tr_DF)[ seq(7,8) ] = paste("Mean", group_levels)
-  names(tr_DF)[ seq(9,10) ] = paste("sd", group_levels)
+  names(tr_DF)[ c(7,8) ]  = paste("Mean", group_levels)
+  names(tr_DF)[ c(9,10) ] = paste("SD", group_levels)
   
   # sort p.values according to their GENE significance (and secondly according to tr significance):
   tr_DF = tr_DF[ order(p_values[match(tr_DF$Gene_id, rownames(p_values)), 1], tr_DF$p.values) ,]
+  
+  # set rownames to 1, 2, ..., nrow(tr_DF)
+  rownames(tr_DF) = seq_len(nrow(tr_DF))
   
   #########################################################################################################
   # Return Convergence results:
@@ -367,12 +396,7 @@ test_DTU = function(BANDITS_data, precision = NULL, R = 10^4, burn_in = 2*10^3,
   # p_values[,3] contains the DTU_measure
   
   return(new("BANDITS_test",
-             Gene_results = data.frame(Gene_id = rownames(p_values), 
-                                       p.values = p_values[,1], adj.p.values = adj.p_values,
-                                       p.values_inverted = ifelse(p_values[,2], p_values[,1], sqrt(p_values[,1])),    # if NOT inverted, take sqrt(p.val)
-                                       adj.p.values_inverted = ifelse(p_values[,2], adj.p_values, sqrt(adj.p_values)), # if NOT inverted, take sqrt(adj.p.val)
-                                       DTU_measure = p_values[,3], # sum of top two differences of posterior modes between transcripts.
-                                       row.names = NULL), 
+             Gene_results = gene_DF, 
              Transcript_results =  tr_DF,
              Convergence = data.frame(Gene_id = rownames(convergence),
                                       converged = ifelse(convergence[,1], TRUE, FALSE), # did the gene converge or NOT ?
