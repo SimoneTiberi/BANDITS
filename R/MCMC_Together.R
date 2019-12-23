@@ -18,6 +18,7 @@ wald_DTU_test_Together_FULL = function(f, l, exon_id, N_1, N_2, R, burn_in,
   
   K = vapply(genes, function(x) sum(names(transcripts) == x), FUN.VALUE = integer(1))
   # sapply(genes, function(x) sum(names(transcripts) == x))
+  n_genes = length(K); # nr of genes in the group
   
   ### ### ### if K == 1, do not provide a p.value, set pi = 1 in the function above!!!
   if( all(K == 1) ){
@@ -43,8 +44,7 @@ wald_DTU_test_Together_FULL = function(f, l, exon_id, N_1, N_2, R, burn_in,
   if( any(is.na(pvals_res[[1]][, 1])) == FALSE ){ # If any p.val is NA, I output a warning and redo the MCMC
     if( all( pvals_res[[1]][K>1, 1] > theshold_pval ) ){
       # if all genes tested (with at least 2 transcripts) have a p.val[55] > 0.1 I return the p.vals
-      n_genes = length(K); # nr of genes in the group
-      
+
       # compute the posterior mode and sd of the precision parameter
       tmp = matrix(-1, nrow = n_genes, ncol = 7)
       tmp[,c(1,2,3)] = pvals_res[[1]]
@@ -56,8 +56,6 @@ wald_DTU_test_Together_FULL = function(f, l, exon_id, N_1, N_2, R, burn_in,
       
       return( list(p.vals = pvals_res, convergence = chain[[2]]) ) # return the convergence result too (to check they are all converged with reasonable burn-in).
     }
-  }else{
-    warning("p.val[, 1] is NA", call. = TRUE, immediate. = TRUE)
   }
   #  print(paste("1st:", pvals_res[,35]) )
   # If I didn't return the output yet it means either: 1) p.val is NA (never so far) 2) p.val < threshold (0.1 by default)/
@@ -67,8 +65,7 @@ wald_DTU_test_Together_FULL = function(f, l, exon_id, N_1, N_2, R, burn_in,
   # if chain_2 converged, I add it to the first one, otherwise I don't:
   if(chain_2[[2]][1] == 0){ # IF the second chain didn't converge (three times), return the result from the first one:
     # if all genes tested (with at least 2 transcripts) have a p.val[55] > 0.1 I return the p.vals
-    n_genes = length(K); # nr of genes in the group
-    
+
     # compute the posterior mode and sd of the precision parameter
     tmp = matrix(-1, nrow = n_genes, ncol = 7)
     tmp[,c(1,2,3)] = pvals_res[[1]]

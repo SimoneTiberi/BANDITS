@@ -16,8 +16,6 @@ wald_DTU_test_FULL = function(f, l, exon_id, N_1, N_2, R, burn_in, mean_log_prec
       pvals_res[[1]] = c(pvals_res[[1]], mean_prec, sd_prec)
       return( list(p.vals = pvals_res, convergence = chain[[2]]) ) # return the convergence result too (to check they are all converged with reasonable burn-in).
     }
-  }else{
-    warning("p.val is NA", call. = TRUE, immediate. = TRUE)
   }
   # If I didn't return the output yet it means either: 1) p.val is NA (never so far) 2) p.val < threshold (0.1 by default)/
   chain_2 =  MCMC_chain_FULL(f = f, l = l, exon_id = exon_id, N_1 = N_1, N_2 = N_2, R = R, K = K, 

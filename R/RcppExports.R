@@ -2,18 +2,18 @@
 # Generator token: 10BE3573-1514-4C36-9D1C-5A225CD40393
 
 Rcpp_Together <- function(R, burn_in, N_1, N_2, pi_new_A, pi_new_B, mcmc_alpha_A, mcmc_alpha_B, log_alpha_new_A, log_alpha_new_B, chol_A, chol_B, mean_log_delta, sd_log_delta, K, l, f, exon_id, One_transcript, one_transcript) {
-    .Call('_BANDITS_Rcpp_Together', PACKAGE = 'BANDITS', R, burn_in, N_1, N_2, pi_new_A, pi_new_B, mcmc_alpha_A, mcmc_alpha_B, log_alpha_new_A, log_alpha_new_B, chol_A, chol_B, mean_log_delta, sd_log_delta, K, l, f, exon_id, One_transcript, one_transcript)
+    .Call(`_BANDITS_Rcpp_Together`, R, burn_in, N_1, N_2, pi_new_A, pi_new_B, mcmc_alpha_A, mcmc_alpha_B, log_alpha_new_A, log_alpha_new_B, chol_A, chol_B, mean_log_delta, sd_log_delta, K, l, f, exon_id, One_transcript, one_transcript)
 }
 
 Rcpp_FULL_Together_Multigroup <- function(R, burn_in, N, N_groups, mean_log_delta, sd_log_delta, pi_new, mcmc_alpha, alpha_new, chol, TOT_Y_new, precision, K, l, f, exon_id, One_transcript, one_transcript) {
-    .Call('_BANDITS_Rcpp_FULL_Together_Multigroup', PACKAGE = 'BANDITS', R, burn_in, N, N_groups, mean_log_delta, sd_log_delta, pi_new, mcmc_alpha, alpha_new, chol, TOT_Y_new, precision, K, l, f, exon_id, One_transcript, one_transcript)
+    .Call(`_BANDITS_Rcpp_FULL_Together_Multigroup`, R, burn_in, N, N_groups, mean_log_delta, sd_log_delta, pi_new, mcmc_alpha, alpha_new, chol, TOT_Y_new, precision, K, l, f, exon_id, One_transcript, one_transcript)
 }
 
 Rcpp_Unique <- function(K, R, burn_in, N_1, N_2, mean_log_delta, sd_log_delta, l, f, exon_id, one_transcript) {
-    .Call('_BANDITS_Rcpp_Unique', PACKAGE = 'BANDITS', K, R, burn_in, N_1, N_2, mean_log_delta, sd_log_delta, l, f, exon_id, one_transcript)
+    .Call(`_BANDITS_Rcpp_Unique`, K, R, burn_in, N_1, N_2, mean_log_delta, sd_log_delta, l, f, exon_id, one_transcript)
 }
 
 Rcpp_FULL_Unique_Multigroup <- function(K, R, burn_in, N, N_groups, mean_log_delta, sd_log_delta, pi_new, mcmc_alpha, alpha_new, chol, l, f, exon_id, one_transcript) {
-    .Call('_BANDITS_Rcpp_FULL_Unique_Multigroup', PACKAGE = 'BANDITS', K, R, burn_in, N, N_groups, mean_log_delta, sd_log_delta, pi_new, mcmc_alpha, alpha_new, chol, l, f, exon_id, one_transcript)
+    .Call(`_BANDITS_Rcpp_FULL_Unique_Multigroup`, K, R, burn_in, N, N_groups, mean_log_delta, sd_log_delta, pi_new, mcmc_alpha, alpha_new, chol, l, f, exon_id, one_transcript)
 }
 

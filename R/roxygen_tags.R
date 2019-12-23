@@ -1,3 +1,4 @@
+#' @useDynLib BANDITS, .registration=TRUE
 #' @importFrom MASS ginv
 #' @importFrom doRNG '%dorng%'
 #' @importFrom data.table fread

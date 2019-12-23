@@ -1,3 +1,7 @@
+Changes in version 1.2.1:
++ bug fixed in 'test_DTU' function (giving error: "object 'n_genes' not found")
++ Added 1 section of the vignette for inference with 3 groups
+
 Changes in version 1.2.0:
 + Added mean and standard deviation estimates of the precision parameter
 + Allow estimation of parameters (without testing) when 1 group only is provided

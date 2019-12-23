@@ -105,7 +105,6 @@
 #' 
 #' #Finally, we can plot the estimated average transcript relative expression 
 #' # in the two groups for a specific gene via 'plot_proportions'.
-#' library(ggplot2)
 #' plot_proportions(results, top_gene$Gene_id)
 #' 
 #' @author Simone Tiberi \email{simone.tiberi@uzh.ch}

@@ -70,9 +70,8 @@ wald_DTU_test_MultiGroup_Together = function(f, l, exon_id, N, R, burn_in,
   
   for(g in seq_len(n_genes) ){
     if(K[g] > 1){
-      chain[[1]] = rbind(chain[[1]], chain_2[[1]])
       for(n in seq_len(N_groups) ){
-        chain[[1]][[g]][[n]] = rbind( chain[[1]][[g]][[n]], chain_2[[1]][[g]][[n]])
+        chain[[1]][[g]][[n]] = rbind( chain[[1]][[g]][[n]], chain_2[[1]][[g]][[n]] )
       }
     }
   }

@@ -41,7 +41,7 @@ We input the equivalence classes and respective counts, where the equivalence cl
 The method is embedded in a Bayesian hierarchical framework, where the posterior densities of the parameters are inferred via Markov chain Monte Carlo (MCMC) techniques.
 The allocation of each RNA-seq read to its transcript of origin is treated as a latent variable and also sampled in the MCMC.
 To test for DTU, we compare the average transcript relative abundance between two or more conditions.
-A statistical test is performed, both, at the gene and transcript level, allowing scientists to investigate what specific transcripts are differentially used in significant genes.
+A statistical test is performed, both, at the gene- and transcript-level, allowing scientists to investigate what specific transcripts are differentially used in significant genes.
 
 To access the R code used in the vignettes, type:
 ```{r vignettes, eval=FALSE} 
@@ -86,7 +86,7 @@ NOTE: when using *salmon*, use the option `--dumpEq` to obtain the equivalence c
 The file [README](https://github.com/SimoneTiberi/BANDITS/blob/master/README.md) provides three pipelines for aligning reads with *salmon*, *kallisto* and *STAR*.
 
 # Gene-transcript matching
-Further to the equivalence classes, our tool requires the matching between transcript and gene ids, compatible with the genome or transcriptome used to align reads.
+Further to the equivalence classes, our tool requires the matching between gene and transcript ids, compatible with the genome or transcriptome used to align reads.
 There are multiple ways to compute a gene-transcript compatibility matrix; below we show two examples to create it, accoriding to whether reads are aligned with a genome and transcriptome aligner.
 Bear in mind that the example code below will not work on any given gtf and fasta file and adjustments might be needed; alternative approaches to compute gene-transcript matchings are illustrated in *tximport* [@tximport] vignette.
 
@@ -133,7 +133,7 @@ Specify the directory of the data (internal in the package).
 data_dir = system.file("extdata", package = "BANDITS")
 ```
 
-We need a matrix or data.frame containing the matching between the transcript and the gene identifiers.
+We need a matrix or data.frame containing the matching between gene and transcript identifiers.
 The file "alignment and gene-transcript matching.txt" shows how to create such a file from a gtf (in case of genome alignment) or from a fasta file (in case of transcript alignment).
 
 Load the precomputed gene-transcript matching.
@@ -383,7 +383,7 @@ plot_proportions(results, top_gene$Gene_id, CI = TRUE, CI_level = 0.95)
 ### Results in detail
 In this Section we aim to explain in detail the output of `test_DTU`.
 
-In both, gene and transcript level tests, `p.values` and `adj.p.values` indicate the p.values and adjusted p.values, where adjusted p.values are obtained via `p.adjust`, by implementing Benjamini and Hochberg correction.
+In both, gene- and transcript-level tests, `p.values` and `adj.p.values` indicate the p.values and adjusted p.values, where adjusted p.values are obtained via `p.adjust`, by implementing Benjamini and Hochberg correction.
 
 #### Gene level results {-}
 In gene level results, only for two-group comparisons, we also propose a conservative measure, `p.values_inverted`, which accounts for the inversion of the dominant transcript (i.e., the most expressed transcript).
@@ -400,10 +400,54 @@ Finally, `Mean log-prec group_name` and `SD log-prec group_name` indicate the po
 The precision parameter models the degree of over-dispersion between samples: the higher the precision parameter (or its logarithm), the lower the sample-to-sample variability.
 
 #### Transcript level results {-}
-In transcript level results, `Max_Gene_Tr.p.val` and `Max_Gene_Tr.Adj.p.val` are two conservative transcript level measures which account for both, the gene and transcript level p.values: they are the maximum between the gene and transcript level p.values and adjusted p.values, respectively.
+In transcript level results, `Max_Gene_Tr.p.val` and `Max_Gene_Tr.Adj.p.val` are two conservative transcript level measures which account for both, the gene- and transcript-level p.values: they are the maximum between the gene and transcript level p.values and adjusted p.values, respectively.
 With these measures, a transcript can only be detected as significant if the corresponding gene is also significant.
 
 Finally, `Mean group_name` and `SD group_name` indicate the posterior mean and standard deviation of each transcript mean relative abundance.
+
+# Inference with 3 or more groups
+If 3 or more groups are available inference is carried out as in the case with 2 groups described above.
+
+Here we propose re-analyze the previous data assuming a three-group structure.
+The pipeline exposed above is unchanged, except for the design matrix, which now includes three groups.
+```{r specify_design_3_groups}
+samples_design_3_groups = data.frame(sample_id = sample_names,
+                            group = c("A", "B", "B", "C"))
+samples_design_3_groups
+levels(samples_design_3_groups$group)
+```
+
+Perform differential splicing:
+```{r test_DTU_3_groups}
+set.seed(61217)
+results_3_groups = test_DTU(BANDITS_data = input_data,
+                   precision = precision$prior,
+                   samples_design = samples_design_3_groups,
+                   group_col_name = "group",
+                   R = 10^4, burn_in = 2*10^3, n_cores = 2,
+                   gene_to_transcript = gene_tr_id)
+results_3_groups
+```
+
+Below we visualize gene- and transcript-level results tables
+Note that `NaN` or `NA` appear when no counts are available for a specific group of samples; in such cases, the remainig two groups of samples are compared.
+```{r top_genes_3_groups}
+head(top_genes(results_3_groups))
+
+head(top_transcripts(results_3_groups))
+```
+
+We can visualize results from specific gene or transcript.
+```{r top_gene_3_groups}
+gene(results_3_groups, top_genes(results_3_groups)$Gene_id[1])
+
+transcript(results_3_groups, top_transcripts(results_3_groups)$Transcript_id[1])
+```
+
+Finally, we can plots the estimated mean transcript relative expression of a specific gene.
+```{r plot_proportions_3_groups}
+plot_proportions(results_3_groups, top_genes(results_3_groups)$Gene_id[1], CI = TRUE, CI_level = 0.95)
+```
 
 # Inference with 1 group only
 If all samples belong to the same experimental condition, differential testing between conditions cannot be performed.
@@ -429,7 +473,7 @@ results_1_group = test_DTU(BANDITS_data = input_data,
 results_1_group
 ```
 
-Gene and transcript-level results can be visualized as above; results are sorted by gene name.
+Gene- and transcript-level results can be visualized as above; results are sorted by gene name.
 Note that now all columns relative to DTU testing are missing (p.values, adjusted p.values, DTU_measure, etc...).
 ```{r top_genes_1_group}
 head(top_genes(results_1_group))
@@ -446,7 +490,7 @@ transcript(results_1_group, top_transcripts(results_1_group)$Transcript_id[1])
 
 Finally, we can plots the estimated mean transcript relative expression of a specific gene.
 ```{r plot_proportions_1_group}
-plot_proportions(results_1_group, top_genes(results_1_group)$Gene_id[1], CI = TRUE, CI_level = 0.95)
+plot_proportions(results_1_group, top_genes(results)$Gene_id[1], CI = TRUE, CI_level = 0.95)
 ```
 
 # Session info
