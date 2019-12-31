@@ -30,11 +30,14 @@ test_DTU_multi_group = function(BANDITS_data, mean_log_precision, sd_log_precisi
                            f = counts(BANDITS_data)[[p]][,ord_samples]
                            sel_samples = colSums(f) > 0.5
                            
+                           # AND MIN 5 counts per group:
+                           cond_min5_perGroup = vapply(splits, function(id) sum(f[,id]) > 4.5, FUN.VALUE = logical(1))
+                           
                            # select samples with BANDITS_data only:
                            f = f[, sel_samples ]
                            N_mg = vapply(splits, function(id) sum(sel_samples[id]), FUN.VALUE = integer(1))
                            # sapply(splits, function(id) sum(sel_samples[id]))
-                           sel_groups = N_mg > 0.5 # sel groups to keep (if at least 1 sample!):
+                           sel_groups = cond_min5_perGroup & {N_mg > 0.5} # sel groups to keep (if at least 1 sample!):
                            N_mg = N_mg[ sel_groups ] # remove groups with 0 counts.
                            
                            # only run the MCMC if there are at least 2 groups with at least 1 sample with counts

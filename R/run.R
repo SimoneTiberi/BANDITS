@@ -203,15 +203,17 @@ test_DTU = function(BANDITS_data, precision = NULL, R = 10^4, burn_in = 2*10^3,
                          .errorhandling = "stop") %dorng%{
                            # ORDER counts to respect the ordering in "groups" via 'ord_samples'
                            f = counts(BANDITS_data)[[p]][,ord_samples]
-                           sel_samples = colSums(f) > 0.5
+                           # AND MIN 5 counts per group:
+                           cond_min5_perGroup = {sum(f[,seq_len(N[1])]) > 4.5} & {sum(f[,N[1] + seq_len(N[2])]) > 4.5}
                            
                            # select samples with data only:
+                           sel_samples = colSums(f) > 0.5
                            f = as.matrix( f[, sel_samples ] )
                            N1 = sum(sel_samples[seq_len(N[1])])
                            N2 = sum(sel_samples[N[1] + seq_len(N[2])])
                            
                            # only run the MCMC if there is at least 1 sample with at least 1 count in each condition:
-                           cond_f = {N1 > 0.5} & {N2 > 0.5}
+                           cond_f = cond_min5_perGroup & {N1 > 0.5} & {N2 > 0.5}
                            
                            # initialize results:
                            res = NULL

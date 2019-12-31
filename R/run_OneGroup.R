@@ -20,14 +20,17 @@ infer_one_group = function(BANDITS_data, mean_log_precision, sd_log_precision,
                          .errorhandling = "stop") %dorng%{
                            # ORDER counts to respect the ordering in "groups" via 'ord_samples'
                            f = counts(BANDITS_data)[[p]][,ord_samples]
-                           sel_samples = colSums(f) > 0.5
-                           
+
+                           # AND MIN 5 counts per group:
+                           cond_min5_perGroup = sum(f) > 4.5
+
                            # select samples with data only:
+                           sel_samples = colSums(f) > 0.5
                            f = as.matrix( f[, sel_samples ] )
                            N = sum(sel_samples)
                            
                            # only run the MCMC if there is at least 1 sample with at least 1 count in each condition:
-                           cond_f = N > 0.5
+                           cond_f = cond_min5_perGroup & {N > 0.5}
                            
                            # initialize results:
                            res = NULL
