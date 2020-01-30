@@ -1,6 +1,7 @@
+# BANDITS: Bayesian ANalysis of DIfferenTial Splicing
+
 <img src="inst/extdata/BANDITS.png" width="200" align="right"/> 
 
-# BANDITS: Bayesian ANalysis of DIfferenTial Splicing
 `BANDITS` is a Bayesian hierarchical model for detecting differential splicing of genes and transcripts,
 via differential transcript usage (DTU), 
 between two or more conditions.
