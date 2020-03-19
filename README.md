@@ -26,12 +26,12 @@ BiocManager::install("BANDITS")
 ## Devel installation from github
 To install the latest development version of the package from github, use `devtools` (available [here](https://github.com/hadley/devtools)):
 ``` r
-devtools::install_github("SimoneTiberi/BANDITS")
+devtools::install_github("SimoneTiberi/BANDITS", dependencies = TRUE)
 ```
 
 To install the package jointly with its vignette remove `--no-build-vignettes` from `build_opts`:
 ``` r
-devtools::install_github("SimoneTiberi/BANDITS", build_opts = c("--no-resave-data", "--no-manual"))
+devtools::install_github("SimoneTiberi/BANDITS", build_opts = c("--no-resave-data", "--no-manual"), dependencies = TRUE)
 ```
 
 ## Vignette
