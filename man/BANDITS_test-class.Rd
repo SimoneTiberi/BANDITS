@@ -164,7 +164,6 @@ transcript(results, top_transcript$Transcript_id)
 
 #Finally, we can plot the estimated average transcript relative expression 
 # in the two groups for a specific gene via 'plot_proportions'.
-library(ggplot2)
 plot_proportions(results, top_gene$Gene_id)
 
 }

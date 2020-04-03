@@ -1,7 +1,7 @@
 Package: BANDITS
 Type: Package
 Title: BANDITS: Bayesian ANalysis of DIfferenTial Splicing
-Version: 1.3.2
+Version: 1.3.3
 Date: 2019-02-19
 Author: Simone Tiberi [aut, cre], Mark D. Robinson [aut].
 Maintainer: Simone Tiberi <simone.tiberi@uzh.ch>
@@ -13,7 +13,7 @@ Description: BANDITS is a Bayesian hierarchical model for detecting differential
   via a multivariate Wald test on the posterior densities for the average relative abundance of transcripts.
 biocViews: DifferentialSplicing, AlternativeSplicing, Bayesian, Genetics,
   RNASeq, Sequencing, DifferentialExpression, GeneExpression, MultipleComparison,
-  Software, WorkflowStep, Transcription
+  Software, Transcription, StatisticalMethod, Visualization
 License: GPL (>= 3)
 Depends: R (>= 3.6.0)
 Imports: Rcpp, doRNG, MASS, data.table, doParallel, parallel, foreach, methods, stats, graphics, ggplot2,

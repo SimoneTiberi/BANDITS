@@ -10,10 +10,11 @@ in a Dirichlet-multinomial model, and samples the allocation of fragments to the
 Parameters are inferred via Markov chain Monte Carlo (MCMC) techniques and a DTU test is performed 
 via a multivariate Wald test on the posterior densities for the average relative abundance of transcripts.
 
->  Simone Tiberi and Mark D Robinson (2019).
+>  Simone Tiberi and Mark D Robinson (2020).
 BANDITS: Bayesian differential splicing accounting for sample-to-sample variability and mapping uncertainty.
-*bioRxiv* **750018**.
-doi: [10.1101/750018](https://doi.org/10.1101/750018)
+> 
+> *Genome Biology* **21 (69)**.
+doi: [10.1186/s13059-020-01967-8](https://doi.org/10.1186/s13059-020-01967-8)
 
 ## Bioconductor installation 
 `BANDITS` is available on [Bioconductor](https://bioconductor.org/packages/BANDITS) and can be installed with the command:
@@ -26,12 +27,12 @@ BiocManager::install("BANDITS")
 ## Devel installation from github
 To install the latest development version of the package from github, use `devtools` (available [here](https://github.com/hadley/devtools)):
 ``` r
-devtools::install_github("SimoneTiberi/BANDITS", dependencies = TRUE)
+devtools::install_github("SimoneTiberi/BANDITS")
 ```
 
 To install the package jointly with its vignette remove `--no-build-vignettes` from `build_opts`:
 ``` r
-devtools::install_github("SimoneTiberi/BANDITS", build_opts = c("--no-resave-data", "--no-manual"), dependencies = TRUE)
+devtools::install_github("SimoneTiberi/BANDITS", build_opts = c("--no-resave-data", "--no-manual"))
 ```
 
 ## Vignette

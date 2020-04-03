@@ -4,16 +4,16 @@ citEntry(entry 	= "Article",
   title        	= "BANDITS: Bayesian differential splicing accounting for sample-to-sample variability and mapping uncertainty",
   author       	= personList(as.person("Simone Tiberi"),
                    as.person("Mark D. Robinson")),
-	eprint = "https://www.biorxiv.org/content/early/2019/08/29/750018.full.pdf",
-	journal = "bioRxiv",
-  year = "2019",
-  doi	= "10.1101/750018",
-  url  = "https://www.biorxiv.org/content/10.1101/750018",
-	publisher = "Cold Spring Harbor Laboratory",
-
-  textVersion  	=
-  paste("Simone Tiberi and Mark D. Robinson (2019).",
+	eprint = "https://genomebiology.biomedcentral.com/articles/10.1186/s13059-020-01967-8",
+	journal = "Genome Biology",
+	volume= "21",
+  number= "69",
+  year = "2020",
+  doi	= "10.1186/s13059-020-01967-8",
+  url  = "https://genomebiology.biomedcentral.com/articles/10.1186/s13059-020-01967-8",
+	publisher = "Springer",
+  paste("Simone Tiberi and Mark D. Robinson (2020).",
         "BANDITS: Bayesian differential splicing accounting for sample-to-sample variability and mapping uncertainty.",
-        "bioRxiv.",
-        "URL https://www.biorxiv.org/content/10.1101/750018")
+        "Genome Biology, 21 (69).",
+        "URL https://genomebiology.biomedcentral.com/articles/10.1186/s13059-020-01967-8")
 )
