@@ -11,6 +11,7 @@ doc
 *.Rhistory
 *.Rproj
 README.html
+src/*rds
 inst/script/*
 !inst/script/extdata.Rmd
 vignettes/*
