@@ -9,7 +9,7 @@ test_DTU_multi_group = function(BANDITS_data, mean_log_precision, sd_log_precisi
   # IN PARALLEL:
   if(n_cores > 1){ # if n_cores > 1 (parallel computing).
     suppressWarnings({
-      cl <- makeCluster(n_cores);
+      cl = makeCluster(n_cores, setup_strategy = "sequential")
     })
     registerDoParallel(cl, n_cores);
   }

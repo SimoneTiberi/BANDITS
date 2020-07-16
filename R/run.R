@@ -192,7 +192,7 @@ test_DTU = function(BANDITS_data, precision = NULL, R = 10^4, burn_in = 2*10^3,
   #########################################################################################################
   # if n_cores > 1 (parallel computing).
   suppressWarnings({
-    cl <- makeCluster(n_cores);
+    cl = makeCluster(n_cores, setup_strategy = "sequential")
   })
   registerDoParallel(cl, n_cores);
   

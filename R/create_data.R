@@ -130,7 +130,7 @@ create_data = function(salmon_or_kallisto,
   # initialize parallel cores (if n_cores > 1)
   if( n_cores > 1.5){ # if n_cores > 1, I use parallel computing tools
     suppressWarnings({
-      cl = makeCluster(n_cores)
+      cl = makeCluster(n_cores, setup_strategy = "sequential")
     })
   }
   
