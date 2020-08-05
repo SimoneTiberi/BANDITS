@@ -24,6 +24,17 @@ if (!requireNamespace("BiocManager", quietly=TRUE))
 BiocManager::install("BANDITS")
 ```
 
+## Devel installation from github
+To install the latest development version of the package from github, use `devtools` (available [here](https://github.com/hadley/devtools)):
+``` r
+devtools::install_github("SimoneTiberi/BANDITS")
+```
+
+To install the package jointly with its vignette remove `--no-build-vignettes` from `build_opts`:
+``` r
+devtools::install_github("SimoneTiberi/BANDITS", build_opts = c("--no-resave-data", "--no-manual"))
+```
+
 ## Vignette
 The vignette illustrating how to use the package can be accessed on the 
 [Bioconductor website](https://www.bioconductor.org/packages/release/bioc/vignettes/BANDITS/inst/doc/BANDITS.pdf)

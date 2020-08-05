@@ -1,7 +1,7 @@
 Package: BANDITS
 Type: Package
 Title: BANDITS: Bayesian ANalysis of DIfferenTial Splicing
-Version: 1.5.1
+Version: 1.4.1
 Date: 2019-02-19
 Author: Simone Tiberi [aut, cre], Mark D. Robinson [aut].
 Maintainer: Simone Tiberi <simone.tiberi@uzh.ch>
@@ -15,7 +15,7 @@ biocViews: DifferentialSplicing, AlternativeSplicing, Bayesian, Genetics,
   RNASeq, Sequencing, DifferentialExpression, GeneExpression, MultipleComparison,
   Software, Transcription, StatisticalMethod, Visualization
 License: GPL (>= 3)
-Depends: R (>= 3.6.0)
+Depends: R (>= 4.0.0)
 Imports: Rcpp, doRNG, MASS, data.table, R.utils, doParallel, parallel, foreach, methods, stats, graphics, ggplot2,
   DRIMSeq, BiocParallel
 LinkingTo: Rcpp, RcppArmadillo
