@@ -4,11 +4,18 @@
 \alias{create_data}
 \title{Create a 'BANDITS_data' object}
 \usage{
-create_data(salmon_or_kallisto, gene_to_transcript,
-  salmon_path_to_eq_classes = NULL, kallisto_equiv_classes = NULL,
-  kallisto_equiv_counts = NULL, kallisto_counts = NULL, eff_len,
-  n_cores = NULL, transcripts_to_keep = NULL,
-  max_genes_per_group = 50)
+create_data(
+  salmon_or_kallisto,
+  gene_to_transcript,
+  salmon_path_to_eq_classes = NULL,
+  kallisto_equiv_classes = NULL,
+  kallisto_equiv_counts = NULL,
+  kallisto_counts = NULL,
+  eff_len,
+  n_cores = NULL,
+  transcripts_to_keep = NULL,
+  max_genes_per_group = 50
+)
 }
 \arguments{
 \item{salmon_or_kallisto}{a character string indicating the input data: 'salmon' or 'kallisto'.}

@@ -4,9 +4,17 @@
 \alias{test_DTU}
 \title{Perform differential splicing}
 \usage{
-test_DTU(BANDITS_data, precision = NULL, R = 10^4, burn_in = 2 *
-  10^3, samples_design, group_col_name = "group", n_cores = 1,
-  gene_to_transcript, theshold_pval = 0.1)
+test_DTU(
+  BANDITS_data,
+  precision = NULL,
+  R = 10^4,
+  burn_in = 2 * 10^3,
+  samples_design,
+  group_col_name = "group",
+  n_cores = 1,
+  gene_to_transcript,
+  theshold_pval = 0.1
+)
 }
 \arguments{
 \item{BANDITS_data}{a 'BANDITS_data' object.}

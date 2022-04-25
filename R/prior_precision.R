@@ -12,6 +12,12 @@
 #' @param n_cores the number of cores to parallelize the tasks on.
 #' @param transcripts_to_keep a vector containing the list of transcripts to keep.
 #' Ideally, created via \code{\link{filter_transcripts}}.
+#' @param max_n_genes_used the maximum number of genes to compute the prior on.
+#' First, genes with at least 2 transcripts are selected.
+#' Then, if more than 'max_n_genes_used' such genes are available, 
+#' 'max_n_genes_used' of these genes are sampled at random and used
+#' to calculate the prior of the precision parameter.
+#' A smaller 'max_n_genes_used' (minimum 100) will lead to faster but more approximate prior estimates.
 #' 
 #' @return A list with 2 objects containing:
 #' \itemize{
@@ -56,7 +62,8 @@
 prior_precision = function(gene_to_transcript,
                            transcript_counts,
                            n_cores = 1,
-                           transcripts_to_keep = NULL){
+                           transcripts_to_keep = NULL,
+                           max_n_genes_used = 100){
   # check that gene_to_transcript is a matrix or data.frame object
   if( !is.data.frame(gene_to_transcript) & !is.matrix(gene_to_transcript)  ){
     message("'gene_to_transcript' must be a matrix or data.frame")
@@ -84,6 +91,11 @@ prior_precision = function(gene_to_transcript,
     return(NULL)
   }
   
+  if(max_n_genes_used < 100){
+    message("'max_n_genes_used' must be at least 100")
+    return(NULL)
+  }
+  
   # filter transcripts if 'transcripts_to_keep' is provided:
   if(!is.null(transcripts_to_keep)){
     sel = rownames(transcript_counts) %in% transcripts_to_keep
@@ -103,6 +115,20 @@ prior_precision = function(gene_to_transcript,
   
   colnames(transcript_counts) = paste("sample", seq_len(N))
   counts_df = data.frame(transcript_counts, gene_id = gene_id, feature_id = rownames(transcript_counts))
+  
+  # remove genes with 1 transcript only:
+  tab = table(counts_df$gene_id)
+  sel_genes = names(tab)[tab > 1.5]
+  
+  counts_df = counts_df[ counts_df$gene_id %in% sel_genes,  ]
+  
+  all_genes = unique(counts_df$gene_id)
+  # to speed-up prior calculations, use a subset of the genes only to compute the prior:
+  if( length(all_genes) > max_n_genes_used){
+    sel_genes_random = sample(all_genes, max_n_genes_used, replace = FALSE)
+    
+    counts_df = counts_df[ counts_df$gene_id %in% sel_genes_random,  ]
+  }
   
   # maybe design and samples not needed for precision estimate...check the function internally!
   samples = data.frame(sample_id = colnames(counts_df)[seq_len(N)],
@@ -156,7 +182,7 @@ plot_precision = function(prior){
     message("'prior' must be a list of length 2, created via 'prior_precision'")
     return(NULL)
   }
-
+  
   if( length(prior) != 2 ){
     message("'prior' must be a list of length 2, created via 'prior_precision'")
     return(NULL)

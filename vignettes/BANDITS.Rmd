@@ -6,10 +6,6 @@ author:
   - &IMLS Institute for Molecular Life Sciences, University of Zurich, Switzerland
   - &SIB SIB Swiss Institute of Bioinformatics, University of Zurich, Switzerland
   email: simone.tiberi@uzh.ch
-- name: Mark D. Robinson
-  affiliation:
-  - *IMLS
-  - *SIB
 package: "`r BiocStyle::pkg_ver('BANDITS')`"
 date: "`r format(Sys.Date(), '%m/%d/%Y')`"
 bibliography: References.bib
@@ -49,7 +45,7 @@ browseVignettes("BANDITS")
 ```
 
 
-Questions relative to *BANDITS* should be either written to the *[Bioconductor support site](https://support.bioconductor.org)*, tagging the question with "BANDITS", or reported as a new issue at *[BugReports](https://github.com/SimoneTiberi/BANDITS/issues)*.
+Questions relative to *BANDITS* should be reported as a new issue at *[BugReports](https://github.com/SimoneTiberi/BANDITS/issues)*.
 
 To cite BANDITS, type:
 ```{r citation} 

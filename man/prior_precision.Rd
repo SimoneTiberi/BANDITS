@@ -4,8 +4,13 @@
 \alias{prior_precision}
 \title{Infer an informative prior for the precision}
 \usage{
-prior_precision(gene_to_transcript, transcript_counts, n_cores = 1,
-  transcripts_to_keep = NULL)
+prior_precision(
+  gene_to_transcript,
+  transcript_counts,
+  n_cores = 1,
+  transcripts_to_keep = NULL,
+  max_n_genes_used = 100
+)
 }
 \arguments{
 \item{gene_to_transcript}{a matrix or data.frame with a list of gene-to-transcript correspondances.
@@ -18,6 +23,13 @@ containing the estimated abundances for each transcript in each sample.}
 
 \item{transcripts_to_keep}{a vector containing the list of transcripts to keep.
 Ideally, created via \code{\link{filter_transcripts}}.}
+
+\item{max_n_genes_used}{the maximum number of genes to compute the prior on.
+First, genes with at least 2 transcripts are selected.
+Then, if more than 'max_n_genes_used' such genes are available, 
+'max_n_genes_used' of these genes are sampled at random and used
+to calculate the prior of the precision parameter.
+A smaller 'max_n_genes_used' (minimum 100) will lead to faster but more approximate prior estimates.}
 }
 \value{
 A list with 2 objects containing:

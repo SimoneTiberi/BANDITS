@@ -4,9 +4,13 @@
 \alias{filter_transcripts}
 \title{Filter lowly abundant transcripts.}
 \usage{
-filter_transcripts(gene_to_transcript, transcript_counts,
-  min_transcript_proportion = 0.01, min_transcript_counts = 1,
-  min_gene_counts = 10)
+filter_transcripts(
+  gene_to_transcript,
+  transcript_counts,
+  min_transcript_proportion = 0.01,
+  min_transcript_counts = 1,
+  min_gene_counts = 10
+)
 }
 \arguments{
 \item{gene_to_transcript}{a matrix or data.frame with a list of gene-to-transcript correspondances.

@@ -6,6 +6,11 @@
 
 using namespace Rcpp;
 
+#ifdef RCPP_USE_GLOBAL_ROSTREAM
+Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
+Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
+#endif
+
 // Rcpp_Together
 Rcpp::List Rcpp_Together(unsigned int& R, unsigned int const& burn_in, unsigned int const& N_1, unsigned int const& N_2, Rcpp::ListOf<Rcpp::NumericMatrix>& pi_new_A, Rcpp::ListOf<Rcpp::NumericMatrix>& pi_new_B, Rcpp::ListOf<Rcpp::NumericMatrix>& mcmc_alpha_A, Rcpp::ListOf<Rcpp::NumericMatrix>& mcmc_alpha_B, Rcpp::ListOf<Rcpp::NumericVector>& log_alpha_new_A, Rcpp::ListOf<Rcpp::NumericVector>& log_alpha_new_B, Rcpp::ListOf<Rcpp::NumericMatrix>& chol_A, Rcpp::ListOf<Rcpp::NumericMatrix>& chol_B, double const& mean_log_delta, double const& sd_log_delta, Rcpp::IntegerVector const& K, Rcpp::NumericVector const& l, Rcpp::IntegerMatrix const& f, Rcpp::IntegerMatrix const& exon_id, Rcpp::LogicalVector const& One_transcript, Rcpp::LogicalVector const& one_transcript);
 RcppExport SEXP _BANDITS_Rcpp_Together(SEXP RSEXP, SEXP burn_inSEXP, SEXP N_1SEXP, SEXP N_2SEXP, SEXP pi_new_ASEXP, SEXP pi_new_BSEXP, SEXP mcmc_alpha_ASEXP, SEXP mcmc_alpha_BSEXP, SEXP log_alpha_new_ASEXP, SEXP log_alpha_new_BSEXP, SEXP chol_ASEXP, SEXP chol_BSEXP, SEXP mean_log_deltaSEXP, SEXP sd_log_deltaSEXP, SEXP KSEXP, SEXP lSEXP, SEXP fSEXP, SEXP exon_idSEXP, SEXP One_transcriptSEXP, SEXP one_transcriptSEXP) {

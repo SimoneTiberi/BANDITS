@@ -25,15 +25,13 @@
 
 \S4method{top_genes}{BANDITS_test}(x, n = Inf, sort_by_g = "p.value")
 
-\S4method{top_transcripts}{BANDITS_test}(x, n = Inf,
-  sort_by_tr = "gene")
+\S4method{top_transcripts}{BANDITS_test}(x, n = Inf, sort_by_tr = "gene")
 
 \S4method{gene}{BANDITS_test}(x, gene_id)
 
 \S4method{transcript}{BANDITS_test}(x, transcript_id)
 
-\S4method{plot_proportions}{BANDITS_test}(x, gene_id, CI = TRUE,
-  CI_level = 0.95)
+\S4method{plot_proportions}{BANDITS_test}(x, gene_id, CI = TRUE, CI_level = 0.95)
 }
 \arguments{
 \item{object, x}{a 'BANDITS_test' object.}
