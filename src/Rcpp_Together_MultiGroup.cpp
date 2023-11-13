@@ -4,7 +4,7 @@
 #include <random>
 #include <vector>
 
-// [[Rcpp::plugins(cpp11)]]
+// [[Rcpp::plugins(cpp17)]]
 
 // Armadillo
 #include <RcppArmadillo.h>

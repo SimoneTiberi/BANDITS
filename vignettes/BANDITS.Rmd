@@ -54,7 +54,7 @@ citation("BANDITS")
 
 
 ## Bioconductor installation
-`BANDITS` is available on [Bioconductor](https://www.bioconductor.org/packages/release/bioc/html/BANDITS.html) and can be installed with the command:
+`BANDITS` is available on [Bioconductor](https://bioconductor.org/packages/BANDITS) and can be installed with the command:
 ```{r Bioconductor_installation, eval=FALSE}
 if (!requireNamespace("BiocManager", quietly=TRUE))
   install.packages("BiocManager")

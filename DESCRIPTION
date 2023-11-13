@@ -1,7 +1,7 @@
 Package: BANDITS
 Type: Package
 Title: BANDITS: Bayesian ANalysis of DIfferenTial Splicing
-Version: 1.11.1
+Version: 1.18.1
 Author: Simone Tiberi [aut, cre].
 Maintainer: Simone Tiberi <simone.tiberi@uzh.ch>
 Description: BANDITS is a Bayesian hierarchical model for detecting differential splicing of genes and transcripts,
@@ -14,15 +14,15 @@ biocViews: DifferentialSplicing, AlternativeSplicing, Bayesian, Genetics,
   RNASeq, Sequencing, DifferentialExpression, GeneExpression, MultipleComparison,
   Software, Transcription, StatisticalMethod, Visualization
 License: GPL (>= 3)
-Depends: R (>= 4.0.0)
+Depends: R (>= 4.3.0)
 Imports: Rcpp, doRNG, MASS, data.table, R.utils, doParallel, parallel, foreach, methods, stats, graphics, ggplot2,
   DRIMSeq, BiocParallel
 LinkingTo: Rcpp, RcppArmadillo
 Suggests: knitr, rmarkdown, testthat,
   tximport, BiocStyle, GenomicFeatures, Biostrings
-SystemRequirements: C++11
+SystemRequirements: C++17
 VignetteBuilder: knitr
-RoxygenNote: 7.1.1
+RoxygenNote: 7.2.3
 ByteCompile: true
 URL: https://github.com/SimoneTiberi/BANDITS
 BugReports: https://github.com/SimoneTiberi/BANDITS/issues

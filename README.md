@@ -25,8 +25,8 @@ BiocManager::install("BANDITS")
 ```
 
 ## Vignette
-The vignette illustrating how to use the package can be accessed on the 
-[Bioconductor website](https://www.bioconductor.org/packages/release/bioc/vignettes/BANDITS/inst/doc/BANDITS.pdf)
+The vignette illustrating how to use the package can be accessed on 
+[Bioconductor](https://bioconductor.org/packages/BANDITS)
 or from R via:
 ``` r
 vignette("BANDITS")
