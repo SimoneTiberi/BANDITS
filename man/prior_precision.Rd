@@ -41,8 +41,10 @@ A list with 2 objects containing:
 \description{
 \code{prior_precision} uses \code{DRIMSeq}'s pipeline to infer an informative prior for the
 precision parameter of the Dirichlet-Multinomial distribution.
-The function computes the genewise estimates for the precision via \code{DRIMSeq::dmPrecision},
+The function computes the genewise estimates for the precision as in \code{DRIMSeq::dmPrecision},
 and calculates the mean and standard deviation of the log-precision estimates.
+The required \code{DRIMSeq} functions are included in \code{BANDITS},
+hence \code{DRIMSeq} does not need to be installed.
 }
 \examples{
 # specify the directory of the internal data:

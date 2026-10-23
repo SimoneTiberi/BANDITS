@@ -2,8 +2,10 @@
 #'
 #' \code{prior_precision} uses \code{DRIMSeq}'s pipeline to infer an informative prior for the
 #' precision parameter of the Dirichlet-Multinomial distribution.
-#' The function computes the genewise estimates for the precision via \code{DRIMSeq::dmPrecision},
+#' The function computes the genewise estimates for the precision as in \code{DRIMSeq::dmPrecision},
 #' and calculates the mean and standard deviation of the log-precision estimates.
+#' The required \code{DRIMSeq} functions are included in \code{BANDITS},
+#' hence \code{DRIMSeq} does not need to be installed.
 #' 
 #' @param gene_to_transcript a matrix or data.frame with a list of gene-to-transcript correspondances.
 #' The first column represents the gene id, while the second one contains the transcript id.
@@ -123,6 +125,12 @@ prior_precision = function(gene_to_transcript,
   counts_df = counts_df[ counts_df$gene_id %in% sel_genes,  ]
   
   all_genes = unique(counts_df$gene_id)
+
+  if( length(all_genes) == 0 ){
+    message("No genes with at least 2 transcripts were found: the precision can not be estimated")
+    return(NULL)
+  }
+
   # to speed-up prior calculations, use a subset of the genes only to compute the prior:
   if( length(all_genes) > max_n_genes_used){
     sel_genes_random = sample(all_genes, max_n_genes_used, replace = FALSE)
@@ -130,26 +138,28 @@ prior_precision = function(gene_to_transcript,
     counts_df = counts_df[ counts_df$gene_id %in% sel_genes_random,  ]
   }
   
-  # maybe design and samples not needed for precision estimate...check the function internally!
-  samples = data.frame(sample_id = colnames(counts_df)[seq_len(N)],
-                       group = "A")
-  
-  d = dmDSdata(counts = counts_df, samples = samples)
-  
-  design = model.matrix(~ 1, data = samples(d))
+  # list of count matrices (transcripts x samples), one per gene (as in DRIMSeq::dmDSdata):
+  counts_by_gene = dm_counts_by_gene(counts = as.matrix(counts_df[, seq_len(N), drop = FALSE]),
+                                     gene_id = counts_df$gene_id,
+                                     feature_id = counts_df$feature_id)
   
   message("Estimating gene-wise precision parameters")
-  suppressMessages({
-    d = dmPrecision(d, genewise_precision = TRUE, 
-                    design = design, BPPARAM = MulticoreParam(workers = n_cores))
-  })
+  # genewise precision estimates, computed as in DRIMSeq::dmPrecision,
+  # with an intercept-only design (i.e., 1 group of samples) and default parameters.
+  # Functions adapted from DRIMSeq: see 'DRIMSeq_functions.R'.
+  genewise_precision = dm_genewise_precision(counts = counts_by_gene,
+                                             BPPARAM = MulticoreParam(workers = n_cores))
   message("Estimation completed")
   
-  log_prec = log( genewise_precision(d)$genewise_precision )
+  if( all(is.na(genewise_precision)) ){
+    message("The precision could not be estimated for any gene")
+    return(NULL)
+  }
+
+  log_prec = log( genewise_precision )
   mean_log_precision = mean(log_prec, na.rm = TRUE)
   sd_log_precision   = sd(log_prec, na.rm = TRUE)
   
-  names(log_prec) = genewise_precision(d)$gene_id
   list( prior = c(mean_log_precision, sd_log_precision), genewise_log_precision = log_prec )
 }
 

@@ -276,6 +276,7 @@ In this Section we illustrate how to formulate an informative prior for the prec
 Note that this is an optional, yet highly recommended, step.
 
 The `prior_precision` function builds on top of *DRIMSeq*'s [@DRIMSeq] `DRIMSeq::dmPrecision` function which provides genewise estimates of the precision parameter.
+The required *DRIMSeq* functions are included in *BANDITS*, hence *DRIMSeq* does not need to be installed.
 Use the same filtering criteria as in `create_data`, by choosing the same argument for `transcripts_to_keep`.
 If transcript pre-filtering is not performed, leave `transcripts_to_keep` unspecified.
 ```{r prior_precision}

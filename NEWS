@@ -1,3 +1,6 @@
+Changes in version 1.28.1:
++ 'DRIMSeq' dependency removed;
+
 Changes in version 1.24.1:
 + 'create_data' updated to prevent users from providing an unnamed 'eff_len' object;
 
